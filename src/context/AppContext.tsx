@@ -34,14 +34,27 @@ function loadCache(shift: string) {
   try {
     const key = `sese_data_${shift}`;
     const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw) as { employees: Employee[]; tools: Tool[] };
-  } catch {}
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return { 
+          employees: Array.isArray(parsed.employees) ? parsed.employees : [], 
+          tools: Array.isArray(parsed.tools) ? parsed.tools : [] 
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Erro ao ler cache local:', e);
+  }
   return { employees: [], tools: [] };
 }
 function saveCache(shift: string, employees: Employee[], tools: Tool[]) {
+  if (!shift) return;
   try {
     localStorage.setItem(`sese_data_${shift}`, JSON.stringify({ employees, tools }));
-  } catch {}
+  } catch (e) {
+    console.warn('Erro ao salvar cache local:', e);
+  }
 }
 
 // ─── Shift session key (resets when each shift ends) ─────────────────────────

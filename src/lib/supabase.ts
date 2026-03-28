@@ -9,7 +9,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Ensure the client is created even with empty strings to avoid crashing the whole bundle,
 // errors will be caught when trying to actually use the client.
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder'
-);
+let supabaseInstance;
+try {
+  // Use a dummy valid URL to prevent library internal crashes on boot
+  supabaseInstance = createClient(
+    supabaseUrl || 'https://placeholder-v1.supabase.co', 
+    supabaseAnonKey || 'placeholder'
+  );
+} catch (e) {
+  console.error('CRITICAL: Erro ao criar cliente Supabase:', e);
+  // Last resort dummy client to keep React alive
+  supabaseInstance = { 
+    auth: { signInWithPassword: async () => ({ error: { message: 'DB Indisponível' } }), signOut: async () => {} }, 
+    from: () => ({ select: () => ({ order: () => ({ single: () => ({ data: null, error: null }) }) }) }) 
+  } as any;
+}
+
+export const supabase = supabaseInstance;
