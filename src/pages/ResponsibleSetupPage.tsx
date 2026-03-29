@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { UserCheck, Loader2, Contact, ArrowRight } from 'lucide-react';
+import { UserCheck, Loader2, Contact, ArrowRight, ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SHIFTS } from '../constants';
 
 export default function ResponsibleSetupPage() {
-  const { state, setResponsible } = useApp();
+  const { state, setResponsible, setShift } = useApp();
   const [name, setName] = useState('');
   const [matricula, setMatricula] = useState('');
   const [loading, setLoading] = useState(false);
@@ -79,14 +79,25 @@ export default function ResponsibleSetupPage() {
                 </div>
               </div>
 
-              <button 
-                type="submit" 
-                className="btn-primary w-full h-16 text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-gold-500/20 active:scale-95 transition-all mt-4" 
-                disabled={loading || !name.trim()}
-              >
-                {loading ? <Loader2 size={24} className="animate-spin" /> : <ArrowRight size={20} />}
-                {loading ? 'SALVANDO...' : 'ENTRAR NO SISTEMA'}
-              </button>
+              <div className="flex flex-col gap-4 mt-4">
+                <button 
+                  type="submit" 
+                  className="btn-primary w-full h-16 text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-gold-500/20 active:scale-95 transition-all" 
+                  disabled={loading || !name.trim()}
+                >
+                  {loading ? <Loader2 size={24} className="animate-spin" /> : <ArrowRight size={20} />}
+                  {loading ? 'SALVANDO...' : 'ENTRAR NO SISTEMA'}
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={() => setShift(null)}
+                  className="flex items-center justify-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-gold-400 transition-colors py-2"
+                >
+                  <ArrowLeft size={14} />
+                  Alterar Turno / Voltar
+                </button>
+              </div>
             </form>
           </div>
         </div>
