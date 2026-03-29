@@ -35,11 +35,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Sidebar (Desktop & Mobile Drawer) */}
-      <aside className={`fixed lg:sticky top-0 h-screen z-50 w-72 bg-dark-800 border-r border-dark-700 flex flex-col transition-transform duration-300 ease-in-out shrink-0
+      <aside className={`fixed lg:sticky top-0 h-[100dvh] z-50 w-72 bg-dark-800 border-r border-dark-700 flex flex-col transition-transform duration-300 ease-in-out shrink-0
         ${sideOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         
         {/* Logo Section */}
-        <div className="p-6 border-b border-dark-700">
+        <div className="p-6 border-b border-dark-700 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/20">
               <Wrench size={20} className="text-dark-900" />
@@ -53,7 +53,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Shift Badge */}
         {shift && (
-          <div className="mx-4 mt-5 p-4 bg-dark-700/50 rounded-2xl border border-dark-600 backdrop-blur-sm">
+          <div className="mx-4 mt-5 p-4 bg-dark-700/50 rounded-2xl border border-dark-600 backdrop-blur-sm shrink-0">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Turno Ativo</span>
               <span className="w-2 h-2 rounded-full bg-gold-500 animate-pulse shadow-sm shadow-gold-500" />
@@ -92,7 +92,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* Footer actions */}
-        <div className="p-4 border-t border-dark-700 space-y-2">
+        <div className="p-4 border-t border-dark-700 space-y-2 shrink-0">
           <button
             onClick={() => refresh()}
             disabled={loading}
@@ -115,17 +115,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0 bg-dark-900 pb-20 lg:pb-0">
         {/* Top Header */}
         <header className="h-16 lg:h-20 bg-dark-900/80 backdrop-blur-xl border-b border-dark-700 px-4 lg:px-8 flex items-center justify-between shrink-0 sticky top-0 z-30">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <button
               className="lg:hidden p-2.5 -ml-1 rounded-xl bg-dark-800 text-slate-300 active:scale-90 transition-transform border border-dark-700"
               onClick={() => setSideOpen(true)}
             >
               <Menu size={22} />
             </button>
-            <h2 className="text-lg lg:text-xl font-bold text-slate-100 tracking-tight truncate uppercase">{pageTitle}</h2>
+            <h2 className="text-base lg:text-xl font-bold text-slate-100 tracking-tight truncate uppercase">{pageTitle}</h2>
           </div>
 
-          <div className="flex items-center gap-3 lg:gap-4">
+          <div className="flex items-center gap-2 lg:gap-4 shrink-0">
             <div className="hidden sm:flex flex-col items-end">
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Status</span>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -133,19 +133,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Online</span>
               </div>
             </div>
-            {shift && (
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Turno</span>
-                <span className="text-xs font-bold text-gold-400">{shift.label}</span>
-              </div>
-            )}
-             <button
-              onClick={() => refresh()}
-              disabled={loading}
-              className="p-2.5 rounded-xl bg-dark-800 text-slate-300 hover:text-gold-400 transition-colors border border-dark-700"
-            >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
-            </button>
+            
+            <div className="flex items-center gap-2 bg-dark-800 p-1 rounded-xl border border-dark-700">
+               <button
+                onClick={() => refresh()}
+                disabled={loading}
+                className="p-2 rounded-lg text-slate-400 hover:text-gold-400 transition-colors"
+                title="Atualizar"
+              >
+                {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+              </button>
+              <div className="w-px h-4 bg-dark-700 mx-0.5" />
+              <button
+                onClick={() => setShift(null)}
+                className="p-2 rounded-lg text-red-500/80 hover:text-red-400 hover:bg-red-400/10 transition-all flex items-center gap-2"
+                title="Sair do Turno"
+              >
+                <LogOut size={16} />
+                <span className="hidden md:inline text-[10px] font-bold uppercase tracking-widest">Sair</span>
+              </button>
+            </div>
           </div>
         </header>
 
