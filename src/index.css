@@ -9,14 +9,15 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-dark-900 text-slate-100 antialiased overflow-hidden;
-    height: 100dvh;
+    @apply bg-dark-900 text-slate-100 antialiased;
+    min-height: 100vh;
     width: 100%;
-    position: fixed; /* Prevents bounce scroll on iOS */
+    overflow-x: hidden;
   }
   #root {
-    height: 100%;
-    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track { @apply bg-dark-800; }

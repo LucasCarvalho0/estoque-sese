@@ -21,16 +21,16 @@ export function Modal({ open, onClose, title, children, size = 'md' }: Props) {
   const widths = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl' };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative bg-dark-800 border border-dark-700 rounded-2xl w-full ${widths[size]} animate-fade-in shadow-2xl`}>
-        <div className="flex items-center justify-between p-5 border-b border-dark-700">
-          <h2 className="text-base font-semibold text-slate-100">{title}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-dark-700 transition-colors text-slate-400 hover:text-slate-100">
-            <X size={18} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
+      <div className={`relative bg-dark-800 border border-dark-700 rounded-3xl w-full ${widths[size]} animate-fade-in shadow-2xl flex flex-col max-h-[95vh] overflow-hidden`}>
+        <div className="flex items-center justify-between p-5 border-b border-dark-700 shrink-0">
+          <h2 className="text-base font-bold text-slate-100 uppercase tracking-tight">{title}</h2>
+          <button onClick={onClose} className="p-2 rounded-xl bg-dark-700 hover:bg-dark-600 transition-colors text-slate-400 hover:text-slate-100 border border-dark-600">
+            <X size={20} />
           </button>
         </div>
-        <div className="p-5 overflow-y-auto max-h-[80vh]">{children}</div>
+        <div className="p-5 overflow-y-auto custom-scrollbar flex-1">{children}</div>
       </div>
     </div>
   );

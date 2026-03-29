@@ -94,13 +94,13 @@ export function SignatureInput({ label = 'Assinatura Digital', value, onChange, 
         </label>
       )}
 
-      <div className="relative border-2 border-dashed border-dark-600 rounded-xl overflow-hidden bg-dark-900 touch-none"
+      <div className="relative border-2 border-dashed border-dark-600 rounded-3xl overflow-hidden bg-dark-900 touch-none shadow-inner"
            style={{ cursor: 'crosshair' }}>
         <canvas
           ref={canvasRef}
-          width={600}
-          height={160}
-          className="w-full h-40"
+          width={800}
+          height={250}
+          className="w-full h-48 sm:h-56 bg-dark-900/50"
           onMouseDown={startDraw}
           onMouseMove={draw}
           onMouseUp={stopDraw}

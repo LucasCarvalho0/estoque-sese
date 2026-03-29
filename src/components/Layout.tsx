@@ -28,14 +28,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const mobileNav = nav.filter(n => n.mobile);
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-dark-900 text-slate-100 px-safe pt-safe">
+    <div className="flex min-h-screen w-full bg-dark-900 text-slate-100 px-safe pt-safe overflow-x-hidden">
       {/* Overlay */}
       {sideOpen && (
-        <div className="fixed inset-0 bg-black/70 z-40 lg:hidden backdrop-blur-sm transition-all" onClick={() => setSideOpen(false)} />
+        <div className="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-md transition-all duration-300" onClick={() => setSideOpen(false)} />
       )}
 
       {/* Sidebar (Desktop & Mobile Drawer) */}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-dark-800 border-r border-dark-700 flex flex-col transition-transform duration-300 ease-in-out
+      <aside className={`fixed lg:sticky top-0 h-screen z-50 w-72 bg-dark-800 border-r border-dark-700 flex flex-col transition-transform duration-300 ease-in-out shrink-0
         ${sideOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         
         {/* Logo Section */}
@@ -70,7 +70,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
           {nav.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
@@ -102,8 +102,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             Atualizar Dados
           </button>
           <button
-             onClick={() => setShift(null)}
-             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-colors text-sm font-bold border border-transparent hover:border-red-400/20"
+            onClick={() => setShift(null)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-red-400 hover:bg-red-400/10 transition-colors text-sm font-bold border border-transparent hover:border-red-400/20"
           >
             <LogOut size={16} />
             Sair do Turno
@@ -112,17 +112,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-dark-900 relative">
+      <div className="flex-1 flex flex-col min-w-0 bg-dark-900 pb-20 lg:pb-0">
         {/* Top Header */}
-        <header className="h-16 lg:h-20 bg-dark-800/50 backdrop-blur-md border-b border-dark-700 px-4 lg:px-8 flex items-center justify-between shrink-0 sticky top-0 z-30">
+        <header className="h-16 lg:h-20 bg-dark-900/80 backdrop-blur-xl border-b border-dark-700 px-4 lg:px-8 flex items-center justify-between shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <button
-              className="lg:hidden p-2.5 -ml-1 rounded-xl bg-dark-700 text-slate-300 active:scale-90 transition-transform"
+              className="lg:hidden p-2.5 -ml-1 rounded-xl bg-dark-800 text-slate-300 active:scale-90 transition-transform border border-dark-700"
               onClick={() => setSideOpen(true)}
             >
               <Menu size={22} />
             </button>
-            <h2 className="text-lg lg:text-xl font-bold text-slate-100 tracking-tight truncate">{pageTitle}</h2>
+            <h2 className="text-lg lg:text-xl font-bold text-slate-100 tracking-tight truncate uppercase">{pageTitle}</h2>
           </div>
 
           <div className="flex items-center gap-3 lg:gap-4">
@@ -134,30 +134,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             {shift && (
-              <div className="hidden md:flex flex-col items-end">
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Local</span>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Turno</span>
                 <span className="text-xs font-bold text-gold-400">{shift.label}</span>
               </div>
             )}
              <button
               onClick={() => refresh()}
               disabled={loading}
-              className="p-2.5 hidden sm:flex rounded-xl bg-dark-700 text-slate-300 hover:text-gold-400 transition-colors"
+              className="p-2.5 rounded-xl bg-dark-800 text-slate-300 hover:text-gold-400 transition-colors border border-dark-700"
             >
               {loading ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
             </button>
           </div>
         </header>
 
-        {/* Scrollable Content Area */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-10 pb-24 lg:pb-10 scroll-smooth">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+        {/* Content Area */}
+        <main className="p-4 lg:p-10 max-w-7xl mx-auto w-full">
+          {children}
         </main>
 
-        {/* Mobile Bottom Navigation (Visible only on small screens) */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-dark-800/90 backdrop-blur-lg border-t border-dark-700 pb-safe shadow-[0_-8px_30px_rgb(0,0,0,0.5)]">
+        {/* Mobile Bottom Navigation */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-dark-900/90 backdrop-blur-xl border-t border-dark-700 pb-safe shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
           <nav className="flex items-center justify-around h-16 px-2">
             {mobileNav.map(({ to, icon: Icon, label, short }) => {
               const isActive = location.pathname === to;
@@ -165,18 +163,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <NavLink
                   key={to}
                   to={to}
-                  className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all active:scale-90
+                  className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all active:scale-90 relative
                     ${isActive ? 'text-gold-400' : 'text-slate-500 hover:text-slate-300'}
                   `}
                 >
-                  <div className={`p-1.5 rounded-lg transition-colors ${isActive ? 'bg-gold-500/10' : ''}`}>
+                  <div className={`p-1.5 rounded-xl transition-colors ${isActive ? 'bg-gold-500/10' : ''}`}>
                     <Icon size={20} className={isActive ? 'stroke-[2.5px]' : ''} />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider leading-none">
+                  <span className="text-[9px] font-black uppercase tracking-widest leading-none">
                     {short || label}
                   </span>
                   {isActive && (
-                    <div className="absolute top-0 w-8 h-1 bg-gold-400 rounded-b-full shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+                    <div className="absolute top-0 w-8 h-1 bg-gold-400 rounded-b-full shadow-[0_2px_10px_rgba(251,191,36,0.6)]" />
                   )}
                 </NavLink>
               );

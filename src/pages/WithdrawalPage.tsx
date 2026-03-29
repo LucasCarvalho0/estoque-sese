@@ -168,31 +168,37 @@ export default function WithdrawalPage() {
 
           {/* Cart Section */}
           {cart.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Itens Selecionados ({cart.length})</p>
-              <div className="space-y-2">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Itens Selecionados</p>
+                <span className="text-[10px] px-2 py-0.5 bg-gold-500/20 text-gold-400 rounded-full font-black">{cart.length}</span>
+              </div>
+              <div className="space-y-2.5">
                 {cart.map(item => (
-                  <div key={item.toolId} className="flex items-center gap-4 p-4 bg-dark-800 rounded-2xl border border-dark-700/50 group animate-slide-up">
-                    <div className="w-10 h-10 rounded-xl bg-dark-900 flex items-center justify-center text-slate-400 border border-dark-700">
-                      <Package size={18} />
+                  <div key={item.toolId} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-dark-800 rounded-3xl border border-dark-700/50 group animate-slide-up shadow-lg">
+                    <div className="w-12 h-12 rounded-2xl bg-dark-900 flex items-center justify-center text-slate-400 border border-dark-700 shrink-0">
+                      <Package size={20} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-100 truncate">{item.tool.name}</p>
+                      <p className="text-sm font-bold text-slate-100 truncate group-hover:text-gold-400 transition-colors">{item.tool.name}</p>
                       <p className="text-[10px] font-mono text-slate-500 uppercase tracking-tight">{item.tool.code}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        className="input-field w-16 text-center py-2 font-black text-sm bg-dark-900"
-                        min={1}
-                        max={item.tool.availableQuantity}
-                        value={item.quantity}
-                        onChange={e => updateQty(item.toolId, Number(e.target.value))}
-                      />
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex flex-col items-end mr-1">
+                        <span className="text-[8px] font-black text-slate-500 uppercase mb-1">Qtd</span>
+                        <input
+                          type="number"
+                          className="input-field w-12 sm:w-16 text-center py-1.5 px-0 font-black text-xs sm:text-sm bg-dark-900 border-dark-700"
+                          min={1}
+                          max={item.tool.availableQuantity}
+                          value={item.quantity}
+                          onChange={e => updateQty(item.toolId, Number(e.target.value))}
+                        />
+                      </div>
                       <button 
                         type="button" 
                         onClick={() => removeFromCart(item.toolId)} 
-                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all border border-red-500/20 active:scale-95"
                       >
                         <Trash2 size={16} />
                       </button>

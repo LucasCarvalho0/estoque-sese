@@ -214,25 +214,30 @@ export default function HistoryPage() {
             return (
               <div key={card.key} className="card border-none bg-dark-800 hover:ring-2 hover:ring-gold-500/20 transition-all p-0 overflow-hidden shadow-xl flex flex-col">
                 {/* Visual Header */}
-                <div className="p-4 lg:p-6 flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-12 h-12 rounded-2xl bg-dark-900 border border-dark-700 flex items-center justify-center shrink-0">
-                      <User size={24} className="text-slate-400" />
+                <div className="p-4 sm:p-6 flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-dark-900 border border-dark-700 flex items-center justify-center shrink-0">
+                      <User size={20} className="text-slate-400 sm:w-6 sm:h-6" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">{card.shift === '1' ? '1º Turno' : '2º Turno'}</p>
-                      <p className="text-lg font-black text-slate-100 uppercase tracking-tight truncate leading-tight group-hover:text-gold-400 transition-colors">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{card.shift === '1' ? '1º Turno' : '2º Turno'}</p>
+                      <p className="text-base sm:text-lg font-black text-slate-100 uppercase tracking-tight truncate leading-tight group-hover:text-gold-400 transition-colors">
                         {getName(card.employeeId)}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-1 text-[10px] font-bold text-slate-500">
-                         <Calendar size={12} className="text-gold-500/50" />
-                         {format(parseISO(card.date), "dd/MM/yyyy", { locale: ptBR })}
-                         <span className="w-1 h-1 rounded-full bg-slate-700" />
-                         {format(parseISO(card.date), "HH:mm")}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] font-bold text-slate-500">
+                         <div className="flex items-center gap-1">
+                           <Calendar size={11} className="text-gold-500/50" />
+                           {format(parseISO(card.date), "dd/MM/yyyy", { locale: ptBR })}
+                         </div>
+                         <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-700" />
+                         <div className="flex items-center gap-1">
+                           <Clock size={11} className="text-gold-500/50" />
+                           {format(parseISO(card.date), "HH:mm")}
+                         </div>
                       </div>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded text-[9px] font-black tracking-widest ${badge.cls}`}>
+                  <span className={`px-2 py-1 rounded text-[9px] font-black tracking-widest shrink-0 ${badge.cls}`}>
                     {badge.label}
                   </span>
                 </div>
