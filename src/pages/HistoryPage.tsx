@@ -92,19 +92,18 @@ export default function HistoryPage() {
     doc.text(`Turno: ${shift?.label ?? '—'}  |  Responsável: ${state.responsible?.name ?? '—'}  |  Emitido: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, 14, 26);
     autoTable(doc, {
       startY: 32,
-      head: [['Data', 'Funcionário', 'Ferramenta', 'Cód.', 'Qtd Ret.', 'Qtd Dev.', 'Status', 'Turno']],
+      head: [['Data', 'Funcionário', 'Ferramenta', 'Cód.', 'Qtd', 'Status', 'Assinatura']],
       body: filtered.map(m => [
         format(parseISO(m.date), 'dd/MM/yy HH:mm'),
         getName(m.employeeId),
         getToolName(m.toolId),
         getToolCode(m.toolId),
         String(m.quantity),
-        m.returnQuantity != null ? String(m.returnQuantity) : '—',
         statusLabel(m.status),
-        m.shift === '1' ? '1º Turno' : '2º Turno',
+        m.signature && !m.signature.startsWith('data:image') ? m.signature : 'Ok'
       ]),
       styles: { fontSize: 8 },
-      headStyles: { fillColor: [245, 158, 11] },
+      headStyles: { fillColor: [0, 0, 0] },
     });
     doc.save('historico-sese.pdf');
   }
@@ -115,10 +114,9 @@ export default function HistoryPage() {
       'Funcionário': getName(m.employeeId),
       'Ferramenta': getToolName(m.toolId),
       'Código': getToolCode(m.toolId),
-      'Qtd Retirada': m.quantity,
-      'Qtd Devolvida': m.returnQuantity ?? '',
+      'Qtd': m.quantity,
       'Status': statusLabel(m.status),
-      'Turno': m.shift === '1' ? '1º Turno' : '2º Turno',
+      'Assinatura': m.signature && !m.signature.startsWith('data:image') ? m.signature : 'Assinado'
     }));
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -288,9 +286,9 @@ export default function HistoryPage() {
                      <div className="flex-1 min-w-0">
                         <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Confirmado por Assinatura</p>
                         {signature.startsWith('data:image') ? (
-                          <img src={signature} alt="Assinatura" className="h-8 lg:h-10 opacity-70 group-hover:opacity-100 transition-opacity invert brightness-200" />
+                          <img src={signature} alt="Assinatura" className="h-8 lg:h-10 opacity-80 group-hover:opacity-100 transition-opacity invert brightness-[10]" />
                         ) : (
-                          <p className="text-xs text-gold-500/80 font-bold italic truncate">{signature}</p>
+                          <p className="text-xs text-slate-100 font-bold italic truncate">{signature}</p>
                         )}
                      </div>
                   </div>

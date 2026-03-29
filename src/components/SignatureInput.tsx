@@ -55,8 +55,8 @@ export function SignatureInput({ label = 'Assinatura Digital', value, onChange, 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
     const pos = getPos(e);
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.lineTo(pos.x, pos.y);
@@ -100,7 +100,7 @@ export function SignatureInput({ label = 'Assinatura Digital', value, onChange, 
           ref={canvasRef}
           width={800}
           height={250}
-          className="w-full h-48 sm:h-56 bg-dark-900/50"
+          className="w-full h-48 sm:h-56 bg-transparent invert brightness-[10]"
           onMouseDown={startDraw}
           onMouseMove={draw}
           onMouseUp={stopDraw}
