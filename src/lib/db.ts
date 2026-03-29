@@ -8,7 +8,7 @@ export async function fetchEmployees(): Promise<Employee[]> {
     .select('*')
     .order('created_at', { ascending: true });
   if (error) throw error;
-  return (data ?? []).map(row => ({
+  return (data ?? []).map((row: any) => ({
     id: row.id,
     name: row.name,
     matricula: row.matricula ?? '',
@@ -51,7 +51,7 @@ export async function fetchTools(): Promise<Tool[]> {
     .select('*')
     .order('created_at', { ascending: true });
   if (error) throw error;
-  return (data ?? []).map(row => ({
+  return (data ?? []).map((row: any) => ({
     id: row.id,
     name: row.name,
     code: row.code,
@@ -106,7 +106,7 @@ export async function fetchMovements(): Promise<Movement[]> {
     .select('*')
     .order('date', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map(row => ({
+  return (data ?? []).map((row: any) => ({
     id: row.id,
     employeeId: row.employee_id,
     toolId: row.tool_id,
@@ -173,7 +173,7 @@ export async function fetchInventories(): Promise<Inventory[]> {
     .select('*')
     .order('date', { ascending: false });
   if (error) throw error;
-  return (data ?? []).map(row => ({
+  return (data ?? []).map((row: any) => ({
     id: row.id,
     date: row.date,
     shift: row.shift,
