@@ -129,26 +129,30 @@ export default function HistoryPage() {
   return (
     <div className="space-y-6 animate-fade-in pb-10 px-1">
       {/* Page Header */}
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
         <div>
           <h2 className="text-xl lg:text-3xl font-black text-slate-100 uppercase tracking-tight">Histórico</h2>
           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1.5 flex items-center gap-2">
             <Clock size={12} className="text-gold-500" /> Registros Detalhados
           </p>
         </div>
-        <div className="hidden sm:flex gap-2">
-          <button className="btn-secondary py-2" onClick={exportPDF}><Download size={16} /> PDF</button>
-          <button className="btn-secondary py-2" onClick={exportXLSX}><Download size={16} /> Excel</button>
+        <div className="flex gap-2">
+          <button className="btn-secondary py-2.5 flex-1 sm:flex-none text-[10px] font-black" onClick={exportPDF}>
+            <Download size={14} className="sm:w-4 sm:h-4" /> <span className="hidden xs:inline">PDF</span>
+          </button>
+          <button className="btn-secondary py-2.5 flex-1 sm:flex-none text-[10px] font-black" onClick={exportXLSX}>
+            <Download size={14} className="sm:w-4 sm:h-4" /> <span className="hidden xs:inline">EXCEL</span>
+          </button>
         </div>
       </div>
 
       {/* Main Search & Tool Bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-2 px-1">
         <div className="relative flex-1">
            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
            <input 
              type="text" 
-             className="input-field pl-12 h-12 bg-dark-800 border-none shadow-lg text-sm" 
+             className="input-field pl-12 h-14 bg-dark-800 border-none shadow-lg text-sm rounded-2xl" 
              placeholder="Filtrar por nome ou ferramenta..."
              value={search}
              onChange={e => setSearch(e.target.value)}
@@ -160,27 +164,28 @@ export default function HistoryPage() {
            )}
         </div>
         <button 
-          className={`btn-secondary h-12 px-6 ${showFilters ? 'bg-gold-500/10 text-gold-400 border-gold-500/50' : ''}`} 
+          className={`btn-secondary h-14 px-6 rounded-2xl ${showFilters ? 'bg-gold-500/10 text-gold-400 border-gold-500/50' : ''}`} 
           onClick={() => setShowFilters(!showFilters)}
         >
-          <Filter size={18} /> <span className="font-bold">FILTROS</span>
+          <Filter size={18} /> <span className="font-black text-xs uppercase tracking-widest">Filtros</span>
+          <ChevronDown size={16} className={`ml-1 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
         </button>
       </div>
 
       {/* Advanced Filters Drawer/Card */}
       {showFilters && (
-        <div className="card border-none bg-dark-800 p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up shadow-xl ring-1 ring-dark-700">
+        <div className="card border-none bg-dark-800 p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up shadow-2xl ring-1 ring-dark-700 mx-1 rounded-3xl">
            <div className="space-y-1.5">
-             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Turno</label>
-             <select className="input-field bg-dark-900 h-11 text-xs" value={filterShift} onChange={e => setFilterShift(e.target.value)}>
+             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Turno</label>
+             <select className="input-field bg-dark-900 h-12 text-xs rounded-xl" value={filterShift} onChange={e => setFilterShift(e.target.value)}>
                <option value="">Qualquer turno</option>
                {SHIFTS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
              </select>
            </div>
            
            <div className="space-y-1.5">
-             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status Inicial</label>
-             <select className="input-field bg-dark-900 h-11 text-xs" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">Status Inicial</label>
+             <select className="input-field bg-dark-900 h-12 text-xs rounded-xl" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                 <option value="">Qualquer status</option>
                 <option value="retirada">Retirada (pendente)</option>
                 <option value="devolvido">Devolvido</option>
@@ -189,15 +194,15 @@ export default function HistoryPage() {
            </div>
 
            <div className="space-y-1.5">
-             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">A partir de</label>
-             <input type="date" className="input-field bg-dark-900 h-11 text-xs" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} />
+             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-1">A partir de</label>
+             <input type="date" className="input-field bg-dark-900 h-12 text-xs rounded-xl" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} />
            </div>
 
-           <div className="flex items-end gap-2">
-             <button className="btn-secondary h-11 flex-1 text-[10px] font-black uppercase tracking-widest" onClick={() => {
+           <div className="flex items-end gap-2 pt-2 sm:pt-0">
+             <button className="btn-secondary h-12 flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => {
                setFilterEmployee(''); setFilterShift(''); setFilterStatus(''); setFilterDateFrom(''); setFilterDateTo(''); setSearch('');
-             }}>LIMPAR TUDO</button>
-             <button className="btn-primary h-11 flex-1 text-[10px] font-black uppercase tracking-widest" onClick={() => setShowFilters(false)}>APLICAR</button>
+             }}>LIMPAR</button>
+             <button className="btn-primary h-12 flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => setShowFilters(false)}>APLICAR</button>
            </div>
         </div>
       )}
