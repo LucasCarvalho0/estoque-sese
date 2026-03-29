@@ -100,12 +100,34 @@ export async function deleteTool(id: string): Promise<void> {
 }
 
 // ─── Movements ──────────────────────────────────────────────────────────────
-export async function fetchMovements(): Promise<Movement[]> {
-  const { data, error } = await supabase
+export async function fetchMovements(options?: { 
+  limit?: number; 
+  offset?: number;
+  shift?: string;
+  toolId?: string;
+  employeeId?: string;
+  dateFrom?: string;
+}): Promise<Movement[]> {
+  let query = supabase
     .from('movements')
-    .select('*')
-    .order('date', { ascending: false });
+    .select('*', { count: 'exact' });
+
+  if (options?.shift) query = query.eq('shift', options.shift);
+  if (options?.toolId) query = query.eq('tool_id', options.toolId);
+  if (options?.employeeId) query = query.eq('employee_id', options.employeeId);
+  if (options?.dateFrom) query = query.gte('date', options.dateFrom);
+
+  query = query.order('date', { ascending: false });
+
+  if (options?.limit) {
+    const from = options.offset || 0;
+    const to = from + options.limit - 1;
+    query = query.range(from, to);
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
+  
   return (data ?? []).map((row: any) => ({
     id: row.id,
     employeeId: row.employee_id,

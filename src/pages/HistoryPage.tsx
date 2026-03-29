@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { History as HistoryIcon, Download, Filter, ChevronDown, User, Package, Calendar, Clock, Search, X, AlertCircle } from 'lucide-react';
+import { History as HistoryIcon, Download, Filter, ChevronDown, User, Package, Calendar, Clock, Search, X, AlertCircle, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { EmptyState } from '../components/EmptyState';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
@@ -19,7 +19,7 @@ interface EmployeeCard {
 }
 
 export default function HistoryPage() {
-  const { state } = useApp();
+  const { state, loadMoreMovements, loading } = useApp();
   const [filterEmployee, setFilterEmployee] = useState('');
   const [filterShift, setFilterShift] = useState(state.currentShift || '');
   const [filterStatus, setFilterStatus] = useState('');
@@ -209,93 +209,106 @@ export default function HistoryPage() {
       {displayItems.length === 0 ? (
         <EmptyState icon={HistoryIcon} title="Nenhum registro encontrado" description="Remova os filtros para ver mais resultados." />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {displayItems.map((card) => {
-            const badge = cardBadge(card.movements);
-            const signature = card.movements.find(m => m.signature)?.signature;
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {displayItems.map((card) => {
+              const badge = cardBadge(card.movements);
+              const signature = card.movements.find(m => m.signature)?.signature;
 
-            return (
-              <div key={card.key} className="card border-none bg-dark-800 hover:ring-2 hover:ring-gold-500/20 transition-all p-0 overflow-hidden shadow-xl flex flex-col">
-                {/* Visual Header */}
-                <div className="p-4 sm:p-6 flex items-start justify-between gap-4">
-                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-dark-900 border border-dark-700 flex items-center justify-center shrink-0">
-                      <User size={20} className="text-slate-400 sm:w-6 sm:h-6" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{card.shift === '1' ? '1º Turno' : '2º Turno'}</p>
-                      <p className="text-base sm:text-lg font-black text-slate-100 uppercase tracking-tight truncate leading-tight group-hover:text-gold-400 transition-colors">
-                        {getName(card.employeeId)}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] font-bold text-slate-500">
-                         <div className="flex items-center gap-1">
-                           <Calendar size={11} className="text-gold-500/50" />
-                           {format(parseISO(card.date), "dd/MM/yyyy", { locale: ptBR })}
-                         </div>
-                         <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-700" />
-                         <div className="flex items-center gap-1">
-                           <Clock size={11} className="text-gold-500/50" />
-                           {format(parseISO(card.date), "HH:mm")}
-                         </div>
+              return (
+                <div key={card.key} className="card border-none bg-dark-800 hover:ring-2 hover:ring-gold-500/20 transition-all p-0 overflow-hidden shadow-xl flex flex-col">
+                  {/* Visual Header */}
+                  <div className="p-4 sm:p-6 flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-dark-900 border border-dark-700 flex items-center justify-center shrink-0">
+                        <User size={20} className="text-slate-400 sm:w-6 sm:h-6" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">{card.shift === '1' ? '1º Turno' : '2º Turno'}</p>
+                        <p className="text-base sm:text-lg font-black text-slate-100 uppercase tracking-tight truncate leading-tight group-hover:text-gold-400 transition-colors">
+                          {getName(card.employeeId)}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[10px] font-bold text-slate-500">
+                           <div className="flex items-center gap-1">
+                             <Calendar size={11} className="text-gold-500/50" />
+                             {format(parseISO(card.date), "dd/MM/yyyy", { locale: ptBR })}
+                           </div>
+                           <span className="hidden sm:block w-1 h-1 rounded-full bg-slate-700" />
+                           <div className="flex items-center gap-1">
+                             <Clock size={11} className="text-gold-500/50" />
+                             {format(parseISO(card.date), "HH:mm")}
+                           </div>
+                        </div>
                       </div>
                     </div>
+                    <span className={`px-2 py-1 rounded text-[9px] font-black tracking-widest shrink-0 ${badge.cls}`}>
+                      {badge.label}
+                    </span>
                   </div>
-                  <span className={`px-2 py-1 rounded text-[9px] font-black tracking-widest shrink-0 ${badge.cls}`}>
-                    {badge.label}
-                  </span>
-                </div>
 
-                {/* Items Detail */}
-                <div className="flex-1 bg-dark-900/40 p-1">
-                   <div className="bg-dark-900/60 rounded-2xl overflow-hidden divide-y divide-dark-700/50">
-                     {card.movements.map(m => {
-                        const diff = m.returnQuantity != null ? m.quantity - m.returnQuantity : 0;
-                        return (
-                          <div key={m.id} className="p-4 flex items-center justify-between gap-4 group/item hover:bg-dark-700/20 transition-colors">
-                             <div className="min-w-0 flex-1">
-                               <p className="text-xs lg:text-sm font-bold text-slate-200 group-hover/item:text-gold-400 transition-colors truncate">{getToolName(m.toolId)}</p>
-                               <p className="text-[10px] font-mono text-slate-500 truncate mt-0.5">{getToolCode(m.toolId)}</p>
-                               {m.observation && (
-                                 <div className="mt-1.5 flex items-start gap-1.5 bg-red-500/5 p-2 rounded-lg border border-red-500/10">
-                                   <AlertCircle size={10} className="text-red-400 shrink-0 mt-0.5" />
-                                   <p className="text-[10px] text-red-300/80 italic leading-tight">"{m.observation}"</p>
-                                 </div>
-                               )}
-                             </div>
-                             <div className="text-right flex flex-col items-end gap-1.5">
-                               <div className="flex items-center gap-2">
-                                  <span className="text-[10px] font-bold text-slate-500 uppercase">Qtd</span>
-                                  <span className="text-sm font-black text-slate-100">{m.quantity}</span>
+                  {/* Items Detail */}
+                  <div className="flex-1 bg-dark-900/40 p-1">
+                     <div className="bg-dark-900/60 rounded-2xl overflow-hidden divide-y divide-dark-700/50">
+                       {card.movements.map(m => {
+                          const diff = m.returnQuantity != null ? m.quantity - m.returnQuantity : 0;
+                          return (
+                            <div key={m.id} className="p-4 flex items-center justify-between gap-4 group/item hover:bg-dark-700/20 transition-colors">
+                               <div className="min-w-0 flex-1">
+                                 <p className="text-xs lg:text-sm font-bold text-slate-200 group-hover/item:text-gold-400 transition-colors truncate">{getToolName(m.toolId)}</p>
+                                 <p className="text-[10px] font-mono text-slate-500 truncate mt-0.5">{getToolCode(m.toolId)}</p>
+                                 {m.observation && (
+                                   <div className="mt-1.5 flex items-start gap-1.5 bg-red-500/5 p-2 rounded-lg border border-red-500/10">
+                                     <AlertCircle size={10} className="text-red-400 shrink-0 mt-0.5" />
+                                     <p className="text-[10px] text-red-300/80 italic leading-tight">"{m.observation}"</p>
+                                   </div>
+                                 )}
                                </div>
-                               <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusClass(m.status)}`}>
-                                 {statusLabel(m.status)} {diff > 0 ? `(-${diff})` : ''}
-                               </span>
-                             </div>
-                          </div>
-                        );
-                     })}
-                   </div>
-                </div>
-
-                {/* Footer Signature */}
-                {signature && (
-                  <div className="p-4 bg-dark-800 border-t border-dark-700/30 flex items-center gap-3">
-                     <div className="w-8 h-8 rounded-lg bg-dark-900 flex items-center justify-center border border-dark-700">
-                        <User size={14} className="text-slate-500" />
-                     </div>
-                     <div className="flex-1 min-w-0">
-                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Confirmado por Assinatura</p>
-                        {signature.startsWith('data:image') ? (
-                          <img src={signature} alt="Assinatura" className="h-8 lg:h-10 opacity-80 group-hover:opacity-100 transition-opacity invert brightness-[10]" />
-                        ) : (
-                          <p className="text-xs text-slate-100 font-bold italic truncate">{signature}</p>
-                        )}
+                               <div className="text-right flex flex-col items-end gap-1.5">
+                                 <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase">Qtd</span>
+                                    <span className="text-sm font-black text-slate-100">{m.quantity}</span>
+                                 </div>
+                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusClass(m.status)}`}>
+                                   {statusLabel(m.status)} {diff > 0 ? `(-${diff})` : ''}
+                                 </span>
+                               </div>
+                            </div>
+                          );
+                       })}
                      </div>
                   </div>
-                )}
-              </div>
-            );
-          })}
+
+                  {/* Footer Signature */}
+                  {signature && (
+                    <div className="p-4 bg-dark-800 border-t border-dark-700/30 flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-lg bg-dark-900 flex items-center justify-center border border-dark-700">
+                          <User size={14} className="text-slate-500" />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Confirmado por Assinatura</p>
+                          {signature.startsWith('data:image') ? (
+                            <img src={signature} alt="Assinatura" className="h-8 lg:h-10 opacity-80 group-hover:opacity-100 transition-opacity invert brightness-[10]" />
+                          ) : (
+                            <p className="text-xs text-slate-100 font-bold italic truncate">{signature}</p>
+                          )}
+                       </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex justify-center pt-4 pb-10">
+             <button 
+               onClick={loadMoreMovements}
+               disabled={loading}
+               className="btn-secondary h-14 px-10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 disabled:opacity-50"
+             >
+               {loading ? <Loader2 size={16} className="animate-spin" /> : <ChevronDown size={18} className="animate-bounce" />}
+               {loading ? 'CARREGANDO...' : 'CARREGAR REGISTROS ANTIGOS'}
+             </button>
+          </div>
         </div>
       )}
     </div>

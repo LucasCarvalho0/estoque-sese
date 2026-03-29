@@ -22,6 +22,7 @@ interface AppCtx {
   returnMovement: (id: string, qty: number, sig: string, obs?: string) => Promise<void>;
   addInventory: (data: Omit<Inventory, 'id' | 'date'>) => Promise<void>;
   refresh: () => Promise<void>;
+  loadMoreMovements: () => Promise<void>;
   toast: (type: ToastMessage['type'], message: string) => void;
 }
 
@@ -132,7 +133,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 4500);
   }, []);
 
-  // ─── Load all data from Supabase ─────────────────────────────────────────
+  // ─── Load data with Limit (Initial Refresh) ─────────────────────────────
   const refresh = useCallback(async () => {
     if (!mounted.current) return;
     setLoading(true);
@@ -141,24 +142,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const [allEmployees, allTools, movements, inventories] = await Promise.all([
         db.fetchEmployees(),
         db.fetchTools(),
-        db.fetchMovements(),
+        db.fetchMovements({ limit: 100 }), // Load only latest 100 initially
         db.fetchInventories(),
       ]);
-      // Filter by current shift in memory (resilient to missing shift column)
+      // Filter by current shift in memory
       const employees = shift ? allEmployees.filter(e => e.shift === shift) : allEmployees;
       const tools = shift ? allTools.filter(t => t.shift === shift) : allTools;
       if (mounted.current) {
-        // Save to local cache for instant reload on refresh
         if (shift) saveCache(shift, employees, tools);
         setState(s => ({ ...s, employees, tools, movements, inventories }));
       }
     } catch (err: any) {
-      console.error('Erro no refresh (usando cache local):', err);
-      // Do NOT show a toast error - silently use cache (already loaded in initial state)
+      console.error('Erro no refresh:', err);
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [toast]);
+  }, []);
+
+  const loadMoreMovements = useCallback(async () => {
+    if (loading || !mounted.current) return;
+    const offset = state.movements.length;
+    try {
+      const more = await db.fetchMovements({ limit: 100, offset });
+      if (more.length === 0) {
+        toast('info', 'Todos os registros foram carregados.');
+        return;
+      }
+      setState(s => ({ ...s, movements: [...s.movements, ...more] }));
+    } catch (err: any) {
+      console.error('Erro ao carregar mais:', err);
+    }
+  }, [state.movements.length, loading, toast]);
 
   // Always refresh data on initial mount if there's a shift saved
   useEffect(() => {
@@ -357,7 +371,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <Context.Provider value={{
       state, loading, toasts,
-      setShift, setResponsible, toast, refresh,
+      setShift, setResponsible, toast, refresh, loadMoreMovements,
       addEmployee, updateEmployee, deleteEmployee,
       addTool, updateTool, deleteTool,
       addMovement, returnMovement,
