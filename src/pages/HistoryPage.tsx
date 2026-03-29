@@ -138,10 +138,10 @@ export default function HistoryPage() {
         </div>
         <div className="flex gap-2">
           <button className="btn-secondary py-2.5 flex-1 sm:flex-none text-[10px] font-black" onClick={exportPDF}>
-            <Download size={14} className="sm:w-4 sm:h-4" /> <span className="hidden xs:inline">PDF</span>
+            <Download size={14} className="sm:w-4 sm:h-4" /> <span>PDF</span>
           </button>
           <button className="btn-secondary py-2.5 flex-1 sm:flex-none text-[10px] font-black" onClick={exportXLSX}>
-            <Download size={14} className="sm:w-4 sm:h-4" /> <span className="hidden xs:inline">EXCEL</span>
+            <Download size={14} className="sm:w-4 sm:h-4" /> <span>EXCEL</span>
           </button>
         </div>
       </div>
