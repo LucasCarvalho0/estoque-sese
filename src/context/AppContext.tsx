@@ -78,32 +78,52 @@ function getShiftSessionKey(shiftId: string): string {
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AppState>(() => {
-    const stored = localStorage.getItem('sese_shift');
-    const storedResponsible = localStorage.getItem('sese_responsible');
-    let responsible: Responsible | null = null;
-    if (storedResponsible && stored) {
-      try {
-        const parsed = JSON.parse(storedResponsible);
-        // Keep responsible only if within the same shift session window
-        if (parsed && typeof parsed === 'object' && parsed.sessionKey === getShiftSessionKey(stored)) {
-          responsible = { name: String(parsed.name || ''), matricula: String(parsed.matricula || '') };
-        }
-      } catch (e) {
-        console.warn('Erro ao restaurar responsável do cache:', e);
-      }
-    }
-    if (stored) {
-      const cached = loadCache(stored);
-      return { ...EMPTY_STATE, currentShift: stored as ShiftId | null, responsible, ...cached };
-    }
-    return { ...EMPTY_STATE, currentShift: null };
-  });
-  const [loading, setLoading] = useState(false);
+  const [state, setState] = useState<AppState>(EMPTY_STATE);
+  const [loading, setLoading] = useState(true);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const mounted = useRef(true);
 
-  useEffect(() => { return () => { mounted.current = false; }; }, []);
+  // Initialize from cache + cloud
+  useEffect(() => {
+    async function init() {
+      if (!mounted.current) return;
+      setLoading(true);
+      try {
+        // 1. Check Cloud Session First
+        const cloud = await db.fetchSession();
+        const storedShift = localStorage.getItem('sese_shift');
+        const finalShift = (cloud?.currentShift || storedShift) as ShiftId | null;
+        
+        let responsible: Responsible | null = null;
+        if (finalShift) {
+          const sessionKey = getShiftSessionKey(finalShift);
+          // Prefer cloud responsible if sessionKey matches
+          if (cloud && cloud.responsibleName && cloud.sessionKey === sessionKey) {
+            responsible = { name: cloud.responsibleName, matricula: cloud.responsibleMatricula || '' };
+          } else {
+            // Fallback to local
+            const storedR = localStorage.getItem('sese_responsible');
+            if (storedR) {
+              const parsed = JSON.parse(storedR);
+              if (parsed && parsed.sessionKey === sessionKey) {
+                responsible = { name: parsed.name, matricula: parsed.matricula || '' };
+              }
+            }
+          }
+          
+          const cached = loadCache(finalShift);
+          setState(s => ({ ...s, currentShift: finalShift, responsible, ...cached }));
+          if (finalShift !== storedShift) localStorage.setItem('sese_shift', finalShift);
+        }
+      } catch (e) {
+        console.warn('Erro na inicialização da nuvem:', e);
+      } finally {
+        if (mounted.current) setLoading(false);
+      }
+    }
+    init();
+    return () => { mounted.current = false; };
+  }, []);
 
   // ─── Toast ─────────────────────────────────────────────────────────────────
   const toast = useCallback((type: ToastMessage['type'], message: string) => {
@@ -152,46 +172,54 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (state.currentShift) {
       refresh();
-    } else {
-      refresh().catch(() => {});
     }
-  }, [state.currentShift]);
+  }, [state.currentShift, refresh]);
 
   // ─── Auth / Shift ──────────────────────────────────────────────────────────
-  const setShift = useCallback((shift: ShiftId | null) => {
+  const setShift = useCallback(async (shift: ShiftId | null) => {
     if (shift) {
       localStorage.setItem('sese_shift', shift);
-      // Load cached employees/tools immediately so data stays visible
+      // Sync to cloud
+      try { await db.upsertSession({ currentShift: shift, sessionKey: getShiftSessionKey(shift) }); } catch {}
+      
       const cached = loadCache(shift);
-      // Restore responsible if still valid for this shift session
       let responsible: Responsible | null = null;
       const storedR = localStorage.getItem('sese_responsible');
       if (storedR) {
         try {
           const parsed = JSON.parse(storedR);
-          if (parsed && typeof parsed === 'object' && parsed.sessionKey === getShiftSessionKey(shift)) {
-            responsible = { name: String(parsed.name || ''), matricula: String(parsed.matricula || '') };
+          if (parsed && parsed.sessionKey === getShiftSessionKey(shift)) {
+            responsible = { name: parsed.name, matricula: parsed.matricula || '' };
           }
-        } catch (e) {
-          console.warn('Erro ao restaurar responsável pós-login:', e);
-        }
+        } catch (e) {}
       }
       setState(s => ({ ...s, currentShift: shift, responsible, ...cached }));
     } else {
       localStorage.removeItem('sese_shift');
-      // NOTE: do NOT remove sese_responsible here — let it expire naturally by session key
+      try { await db.deleteSession(); } catch {}
       supabase.auth.signOut();
       setState(() => ({ ...EMPTY_STATE }));
     }
   }, []);
 
-  const setResponsible = useCallback((r: Responsible | null) => {
+  const setResponsible = useCallback(async (r: Responsible | null) => {
+    const shift = localStorage.getItem('sese_shift') || '1';
+    const sessionKey = getShiftSessionKey(shift);
+    
     if (r) {
-      const shift = localStorage.getItem('sese_shift') || '1';
-      const sessionKey = getShiftSessionKey(shift);
       localStorage.setItem('sese_responsible', JSON.stringify({ ...r, sessionKey }));
+      // Sync to cloud
+      try { 
+        await db.upsertSession({ 
+          currentShift: shift, 
+          responsibleName: r.name, 
+          responsibleMatricula: r.matricula,
+          sessionKey
+        }); 
+      } catch {}
     } else {
       localStorage.removeItem('sese_responsible');
+      try { await db.upsertSession({ currentShift: shift }); } catch {}
     }
     setState(s => ({ ...s, responsible: r }));
   }, []);

@@ -200,3 +200,47 @@ export async function insertInventory(inv: Omit<Inventory, 'id'>): Promise<Inven
   if (error) throw error;
   return { ...inv, id: data.id };
 }
+// ─── Sessions (Multi-device Sync) ───────────────────────────────────────────
+export async function fetchSession() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from('active_sessions')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
+  return data ? {
+    currentShift: data.current_shift as any,
+    responsibleName: data.responsible_name,
+    responsibleMatricula: data.responsible_matricula,
+    sessionKey: data.session_key
+  } : null;
+}
+
+export async function upsertSession(data: { 
+  currentShift: string, 
+  responsibleName?: string, 
+  responsibleMatricula?: string,
+  sessionKey?: string
+}) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const { error } = await supabase
+    .from('active_sessions')
+    .upsert({
+      id: user.id,
+      current_shift: data.currentShift,
+      responsible_name: data.responsibleName || null,
+      responsible_matricula: data.responsibleMatricula || null,
+      session_key: data.sessionKey || null,
+      updated_at: new Date().toISOString()
+    });
+  if (error) throw error;
+}
+
+export async function deleteSession() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('active_sessions').delete().eq('id', user.id);
+}
