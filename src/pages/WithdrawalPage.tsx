@@ -52,7 +52,10 @@ export default function WithdrawalPage() {
     e.preventDefault();
     if (!employeeId) { toast('error', 'Selecione um funcionário.'); return; }
     if (cart.length === 0) { toast('error', 'Adicione pelo menos uma ferramenta.'); return; }
-    if (!signature.trim()) { toast('error', 'A assinatura é obrigatória.'); return; }
+    if (!signature.trim() || signature.length < 100) { 
+      toast('error', 'A assinatura do funcionário é obrigatória para finalizar.'); 
+      return; 
+    }
 
     setSubmitting(true);
     try {
@@ -210,8 +213,13 @@ export default function WithdrawalPage() {
           )}
 
           {/* Signature Section */}
-          <div className="card p-5 lg:p-6 bg-dark-800 border-none">
-            <SignatureInput value={signature} onChange={setSignature} required label="Assinatura do Funcionário" />
+          <div className={`card p-5 lg:p-6 bg-dark-800 border-none transition-all ${!signature ? 'ring-1 ring-red-500/20' : 'ring-1 ring-emerald-500/20'}`}>
+            <SignatureInput 
+              value={signature} 
+              onChange={setSignature} 
+              required 
+              label="Assinatura do Funcionário (Obrigatória)" 
+            />
           </div>
 
           <button

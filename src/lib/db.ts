@@ -266,3 +266,16 @@ export async function deleteSession() {
   if (!user) return;
   await supabase.from('active_sessions').delete().eq('id', user.id);
 }
+
+// ─── Cleaning (Resets) ──────────────────────────────────────────────────────
+export async function clearAllMovements(): Promise<void> {
+  // We use .neq('id', '0') to bypass Supabase's mandatory where clause for delete operations
+  const { error } = await supabase.from('movements').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if (error) throw error;
+}
+
+export async function clearAllInventories(): Promise<void> {
+  const { error } = await supabase.from('inventories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if (error) throw error;
+}
+

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { History as HistoryIcon, Download, Filter, ChevronDown, User, Package, Calendar, Clock, Search, X, AlertCircle, Loader2 } from 'lucide-react';
+import { History as HistoryIcon, Download, Filter, ChevronDown, User, Package, Calendar, Clock, Search, X, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { EmptyState } from '../components/EmptyState';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
@@ -19,7 +19,7 @@ interface EmployeeCard {
 }
 
 export default function HistoryPage() {
-  const { state, loadMoreMovements, loading } = useApp();
+  const { state, loadMoreMovements, clearHistory, loading, toast } = useApp();
   const [filterEmployee, setFilterEmployee] = useState('');
   const [filterShift, setFilterShift] = useState(state.currentShift || '');
   const [filterStatus, setFilterStatus] = useState('');
@@ -140,6 +140,19 @@ export default function HistoryPage() {
           </button>
           <button className="btn-secondary py-2.5 flex-1 sm:flex-none text-[10px] font-black" onClick={exportXLSX}>
             <Download size={14} className="sm:w-4 sm:h-4" /> <span>EXCEL</span>
+          </button>
+          
+          <button 
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all border border-red-500/20 active:scale-95 group/clear relative"
+            onClick={() => {
+              if (window.confirm('TEM CERTEZA? Isso vai apagar TODO o histórico de movimentações e inventários permanentemente.')) {
+                clearHistory();
+              }
+            }}
+            title="Zerar Histórico"
+          >
+            <Trash2 size={16} />
+            <span className="absolute -bottom-8 right-0 bg-dark-800 text-[8px] font-black text-red-400 px-2 py-1 rounded border border-red-500/20 opacity-0 group-hover/clear:opacity-100 transition-opacity whitespace-nowrap z-50">ZERAR TUDO</span>
           </button>
         </div>
       </div>

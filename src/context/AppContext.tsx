@@ -21,6 +21,7 @@ interface AppCtx {
   addMovement: (data: Omit<Movement, 'id' | 'date'>) => Promise<void>;
   returnMovement: (id: string, qty: number, sig: string, obs?: string) => Promise<void>;
   addInventory: (data: Omit<Inventory, 'id' | 'date'>) => Promise<void>;
+  clearHistory: () => Promise<void>;
   refresh: () => Promise<void>;
   loadMoreMovements: () => Promise<void>;
   toast: (type: ToastMessage['type'], message: string) => void;
@@ -368,6 +369,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState(s => ({ ...s, inventories: [saved, ...s.inventories] }));
   }, []);
 
+  const clearHistory = useCallback(async () => {
+    setLoading(true);
+    try {
+      await Promise.all([
+        db.clearAllMovements(),
+        db.clearAllInventories()
+      ]);
+      setState(s => ({ ...s, movements: [], inventories: [] }));
+      toast('success', 'Todo o histórico foi removido com sucesso!');
+    } catch (err: any) {
+      toast('error', 'Erro ao zerar histórico: ' + (err.message || 'Erro desconhecido'));
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
   return (
     <Context.Provider value={{
       state, loading, toasts,
@@ -375,7 +392,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       addEmployee, updateEmployee, deleteEmployee,
       addTool, updateTool, deleteTool,
       addMovement, returnMovement,
-      addInventory,
+      addInventory, clearHistory,
     }}>
       {children}
     </Context.Provider>

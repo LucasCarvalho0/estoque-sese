@@ -69,7 +69,10 @@ export default function ReturnPage() {
   async function handleReturn(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedBatch) return;
-    if (!signature.trim()) { toast('error', 'A assinatura é obrigatória.'); return; }
+    if (!signature.trim() || signature.length < 100) { 
+      toast('error', 'A assinatura de confirmação do funcionário é obrigatória para registrar a devolução.'); 
+      return; 
+    }
 
     setSubmitting(true);
     try {
@@ -168,8 +171,13 @@ export default function ReturnPage() {
               </div>
             </div>
 
-            <div className="pt-2">
-              <SignatureInput value={signature} onChange={setSignature} required label="Assinatura de Confirmação" />
+            <div className={`pt-2 card p-5 lg:p-6 bg-dark-900 border-none transition-all ${!signature ? 'ring-1 ring-red-500/20' : 'ring-1 ring-emerald-500/20'}`}>
+              <SignatureInput 
+                 value={signature} 
+                 onChange={setSignature} 
+                 required 
+                 label="Assinatura de Confirmação (Obrigatória)" 
+              />
             </div>
 
             <button
