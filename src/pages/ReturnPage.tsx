@@ -25,6 +25,12 @@ export default function ReturnPage() {
   const [submitting, setSubmitting] = useState(false);
 
   function getName(id: string) { return state.employees.find(e => e.id === id)?.name ?? '—'; }
+  function getMatricula(id: string) { return state.employees.find(e => e.id === id)?.matricula ?? ''; }
+  function getEmployeeLabel(id: string) { 
+    const emp = state.employees.find(e => e.id === id);
+    if (!emp) return '—';
+    return emp.matricula ? `${emp.name} (Mat. ${emp.matricula})` : emp.name;
+  }
   function getToolName(id: string) { return state.tools.find(t => t.id === id)?.name ?? '—'; }
   function getToolCode(id: string) { return state.tools.find(t => t.id === id)?.code ?? '—'; }
 
@@ -51,7 +57,7 @@ export default function ReturnPage() {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
-      getName(b.employeeId).toLowerCase().includes(q) ||
+      getEmployeeLabel(b.employeeId).toLowerCase().includes(q) ||
       b.movements.some(m => getToolName(m.toolId).toLowerCase().includes(q) || getToolCode(m.toolId).toLowerCase().includes(q))
     );
   });
@@ -109,7 +115,7 @@ export default function ReturnPage() {
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Confirmar Devolução</p>
-              <h2 className="text-xl lg:text-2xl font-black text-slate-100 truncate">{getName(selectedBatch.employeeId)}</h2>
+              <h2 className="text-xl lg:text-2xl font-black text-slate-100 truncate">{getEmployeeLabel(selectedBatch.employeeId)}</h2>
               <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500 font-medium">
                 <span className="flex items-center gap-1.5"><Calendar size={12} /> {format(parseISO(selectedBatch.date), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}</span>
                 <span className="w-1 h-1 rounded-full bg-slate-700" />
@@ -236,7 +242,7 @@ export default function ReturnPage() {
                        <User size={24} />
                      </div>
                      <div className="flex-1 min-w-0">
-                       <p className="font-black text-slate-100 truncate group-hover:text-gold-400 transition-colors uppercase tracking-tight">{getName(batch.employeeId)}</p>
+                       <p className="font-black text-slate-100 truncate group-hover:text-gold-400 transition-colors uppercase tracking-tight">{getEmployeeLabel(batch.employeeId)}</p>
                        <div className="flex items-center gap-2 mt-1">
                          <span className="text-[10px] font-bold text-slate-500 uppercase">{format(parseISO(batch.date), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}</span>
                        </div>
