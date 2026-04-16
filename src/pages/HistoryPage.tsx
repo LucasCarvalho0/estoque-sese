@@ -191,20 +191,49 @@ export default function HistoryPage() {
   }
 
   function exportXLSX() {
-    const rows = filtered.map(m => ({
-      'Data Retirada': format(parseISO(m.date), 'dd/MM/yyyy HH:mm'),
-      'Data Devolução': m.returnDate ? format(parseISO(m.returnDate), 'dd/MM/yyyy HH:mm') : '-',
-      'Funcionário': getName(m.employeeId),
-      'Matrícula': getMatricula(m.employeeId),
-      'Ferramenta': getToolName(m.toolId),
-      'Código': getToolCode(m.toolId),
-      'Qtd Retirada': m.quantity,
-      'Qtd Devolvida': m.returnQuantity ?? 0,
-      'Falta': (m.returnQuantity != null ? m.quantity - m.returnQuantity : 0),
-      'Status': statusLabel(m.status),
-      'Observação': m.observation || '-',
-    }));
-    const ws = XLSX.utils.json_to_sheet(rows);
+    const aoa: any[][] = [];
+    const shift = SHIFTS.find(s => s.id === state.currentShift);
+
+    aoa.push(['Estoque Sesé — Histórico de Movimentações']);
+    aoa.push([`Turno: ${shift?.label ?? '—'}  |  Responsável: ${state.responsible?.name ?? '—'}  |  Emitido: ${format(new Date(), "dd/MM/yyyy HH:mm")}`]);
+    aoa.push([]);
+
+    displayItems.forEach((batch) => {
+      const badge = cardBadge(batch.movements);
+      const title = `${badge.label} - ${getEmployeeLabel(batch.employeeId)}`;
+      
+      aoa.push([title]);
+      aoa.push([`Data da Retirada: ${format(parseISO(batch.date), "dd/MM/yyyy HH:mm")}`]);
+      aoa.push(['Ferramenta', 'Cód.', 'Retirada', 'Devolvida', 'Falta', 'Status', 'Observação']);
+      
+      batch.movements.forEach(m => {
+        const retQty = m.returnQuantity != null ? m.returnQuantity : 0;
+        const diff = m.returnQuantity != null ? m.quantity - m.returnQuantity : 0;
+        aoa.push([
+          getToolName(m.toolId),
+          getToolCode(m.toolId),
+          m.quantity,
+          m.status === 'retirada' ? '-' : retQty,
+          diff > 0 ? diff : 0,
+          statusLabel(m.status),
+          m.observation || '-'
+        ]);
+      });
+
+      const sig1 = batch.movements.find(m => m.signature)?.signature;
+      const sig2 = batch.movements.find(m => m.returnSignature)?.returnSignature;
+      
+      let textLine = "Assinaturas do Tópico: ";
+      textLine += sig1 ? `[Retirada: ${sig1.startsWith('data:image') ? 'Imagem Assinada' : 'Assinatura Digital'}] ` : '[Retirada: Não assinado] ';
+      if (batch.movements.some(m => m.status !== 'retirada')) {
+        textLine += sig2 ? ` | [Devolução: ${sig2.startsWith('data:image') ? 'Imagem Assinada' : 'Assinatura Digital'}]` : ' | [Devolução: Sem Assinatura]';
+      }
+      
+      aoa.push([textLine]);
+      aoa.push([]); // Espaçamento entre os blocos
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Histórico');
     XLSX.writeFile(wb, 'historico-sese.xlsx');
