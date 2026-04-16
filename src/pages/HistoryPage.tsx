@@ -8,7 +8,8 @@ import { SHIFTS } from '../constants';
 import { Movement } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 interface EmployeeCard {
   key: string;
@@ -190,53 +191,149 @@ export default function HistoryPage() {
     doc.save('historico-sese.pdf');
   }
 
-  function exportXLSX() {
-    const aoa: any[][] = [];
-    const shift = SHIFTS.find(s => s.id === state.currentShift);
+  async function exportXLSX() {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Histórico');
 
-    aoa.push(['Estoque Sesé — Histórico de Movimentações']);
-    aoa.push([`Turno: ${shift?.label ?? '—'}  |  Responsável: ${state.responsible?.name ?? '—'}  |  Emitido: ${format(new Date(), "dd/MM/yyyy HH:mm")}`]);
-    aoa.push([]);
+    const shiftInfo = SHIFTS.find(s => s.id === state.currentShift);
+
+    // Columns config
+    ws.columns = [
+      { key: 'col1', width: 25 },
+      { key: 'col2', width: 20 },
+      { key: 'col3', width: 15 },
+      { key: 'col4', width: 12 },
+      { key: 'col5', width: 12 },
+      { key: 'col6', width: 18 },
+      { key: 'col7', width: 30 },
+    ];
+
+    let currentRow = 1;
+
+    // Header principal
+    ws.mergeCells(`A${currentRow}:G${currentRow}`);
+    const titleCell = ws.getCell(`A${currentRow}`);
+    titleCell.value = 'Estoque Sesé — Histórico de Movimentações';
+    titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(currentRow).height = 30;
+    currentRow++;
+
+    ws.mergeCells(`A${currentRow}:G${currentRow}`);
+    ws.getCell(`A${currentRow}`).value = `Turno: ${shiftInfo?.label ?? '—'}  |  Responsável: ${state.responsible?.name ?? '—'}  |  Emitido: ${format(new Date(), "dd/MM/yyyy HH:mm")}`;
+    ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
+    currentRow += 2; // Espaço
 
     displayItems.forEach((batch) => {
       const badge = cardBadge(batch.movements);
+      const isOk = badge.label === 'CONCLUÍDO';
+      const isDivergence = badge.label === 'PENDENTE'; 
+      
       const title = `${badge.label} - ${getEmployeeLabel(batch.employeeId)}`;
       
-      aoa.push([title]);
-      aoa.push([`Data da Retirada: ${format(parseISO(batch.date), "dd/MM/yyyy HH:mm")}`]);
-      aoa.push(['Ferramenta', 'Cód.', 'Retirada', 'Devolvida', 'Falta', 'Status', 'Observação']);
+      // Cabeçalho do Bloco
+      ws.mergeCells(`A${currentRow}:G${currentRow}`);
+      const tCell = ws.getCell(`A${currentRow}`);
+      tCell.value = title;
+      tCell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
+      tCell.fill = { 
+        type: 'pattern', pattern: 'solid', 
+        fgColor: { argb: isDivergence ? 'FFDC2626' : (isOk ? 'FF059669' : 'FFD97706') } 
+      };
+      currentRow++;
+
+      // Datas
+      const retDate = `Data da Retirada: ${format(parseISO(batch.date), "dd/MM/yyyy HH:mm")}`;
+      const firstReturn = batch.movements.find(m => m.returnDate)?.returnDate;
+      const devDate = firstReturn ? `Data da Devolução: ${format(parseISO(firstReturn), "dd/MM/yyyy HH:mm")}` : 'Data da Devolução: Pendente';
       
+      ws.getCell(`A${currentRow}`).value = retDate;
+      ws.getCell(`A${currentRow}`).font = { bold: true };
+      ws.getCell(`C${currentRow}`).value = devDate;
+      ws.getCell(`C${currentRow}`).font = { bold: true };
+      currentRow++;
+
+      // Tabela Títulos
+      const headers = ['Ferramenta', 'Cód.', 'Retirada', 'Devolvida', 'Falta', 'Status', 'Observação'];
+      const headerRow = ws.getRow(currentRow);
+      headerRow.values = headers;
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      for (let i = 1; i <= 7; i++) {
+        const cell = headerRow.getCell(i);
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF374151' } };
+      }
+      currentRow++;
+
+      // Tabela Valores
       batch.movements.forEach(m => {
         const retQty = m.returnQuantity != null ? m.returnQuantity : 0;
         const diff = m.returnQuantity != null ? m.quantity - m.returnQuantity : 0;
-        aoa.push([
+        const statusStr = statusLabel(m.status);
+        
+        const row = ws.getRow(currentRow);
+        row.values = [
           getToolName(m.toolId),
           getToolCode(m.toolId),
           m.quantity,
           m.status === 'retirada' ? '-' : retQty,
           diff > 0 ? diff : 0,
-          statusLabel(m.status),
+          statusStr,
           m.observation || '-'
-        ]);
+        ];
+
+        if (statusStr === 'Pendente' || statusStr === 'Parcial' || diff > 0) {
+           for (let i = 1; i <= 7; i++) {
+             const c = row.getCell(i);
+             c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+             c.font = { color: { argb: 'FFB91C1C' }, bold: true };
+           }
+        }
+        currentRow++;
       });
 
+      // Assinaturas
       const sig1 = batch.movements.find(m => m.signature)?.signature;
       const sig2 = batch.movements.find(m => m.returnSignature)?.returnSignature;
       
-      let textLine = "Assinaturas do Tópico: ";
-      textLine += sig1 ? `[Retirada: ${sig1.startsWith('data:image') ? 'Imagem Assinada' : 'Assinatura Digital'}] ` : '[Retirada: Não assinado] ';
-      if (batch.movements.some(m => m.status !== 'retirada')) {
-        textLine += sig2 ? ` | [Devolução: ${sig2.startsWith('data:image') ? 'Imagem Assinada' : 'Assinatura Digital'}]` : ' | [Devolução: Sem Assinatura]';
+      ws.getCell(`A${currentRow}`).value = "Assinatura Retirada:";
+      ws.getCell(`C${currentRow}`).value = batch.movements.some(m => m.status !== 'retirada') ? "Assinatura Devolução:" : "";
+      
+      currentRow++;
+      
+      if (sig1 && sig1.startsWith('data:image')) {
+         try {
+           const id1 = wb.addImage({ base64: sig1, extension: 'png' });
+           ws.addImage(id1, {
+             tl: { col: 0, row: currentRow - 1 }, // A
+             ext: { width: 140, height: 50 }
+           });
+         } catch(e) {}
+      } else if (sig1) {
+         ws.getCell(`A${currentRow}`).value = sig1;
+      }
+
+      const hasReturn = batch.movements.some(m => m.status !== 'retirada');
+      if (hasReturn && sig2 && sig2.startsWith('data:image')) {
+         try {
+           const id2 = wb.addImage({ base64: sig2, extension: 'png' });
+           ws.addImage(id2, {
+             tl: { col: 2, row: currentRow - 1 }, // C
+             ext: { width: 140, height: 50 }
+           });
+         } catch(e) {}
+      } else if (hasReturn && sig2) {
+         ws.getCell(`C${currentRow}`).value = sig2;
       }
       
-      aoa.push([textLine]);
-      aoa.push([]); // Espaçamento entre os blocos
+      currentRow += 4; // Abre espaço físico na planilha para comportar a altura da imagem
+      currentRow += 2; // Espaçamento visual para o próximo bloco
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Histórico');
-    XLSX.writeFile(wb, 'historico-sese.xlsx');
+    wb.xlsx.writeBuffer().then((buffer) => {
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, 'historico-sese.xlsx');
+    });
   }
 
   return (
