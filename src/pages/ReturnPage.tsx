@@ -82,11 +82,9 @@ export default function ReturnPage() {
 
     setSubmitting(true);
     try {
-      await Promise.all(
-        selectedBatch.movements.map(m =>
-          returnMovement(m.id, returnQtys[m.id] ?? m.quantity, signature, observations[m.id] || undefined)
-        )
-      );
+      for (const m of selectedBatch.movements) {
+        await returnMovement(m.id, returnQtys[m.id] ?? m.quantity, signature, observations[m.id] || undefined);
+      }
       toast('success', `Devolução de ${selectedBatch.movements.length} ferramenta(s) registrada!`);
       setSelectedBatch(null);
       setSearch('');

@@ -59,16 +59,16 @@ export default function WithdrawalPage() {
 
     setSubmitting(true);
     try {
-      await Promise.all(cart.map(item =>
-        addMovement({
+      for (const item of cart) {
+        await addMovement({
           employeeId,
           toolId: item.toolId,
           quantity: item.quantity,
           signature,
           shift: state.currentShift!,
           status: 'retirada',
-        })
-      ));
+        });
+      }
       toast('success', `${cart.length} retirada(s) registrada(s) com sucesso!`);
       setEmployeeId('');
       setCart([]);
