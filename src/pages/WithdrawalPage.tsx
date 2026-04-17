@@ -58,6 +58,7 @@ export default function WithdrawalPage() {
     }
 
     setSubmitting(true);
+    const batchDate = new Date().toISOString();
     try {
       for (const item of cart) {
         await addMovement({
@@ -67,6 +68,7 @@ export default function WithdrawalPage() {
           signature,
           shift: state.currentShift!,
           status: 'retirada',
+          date: batchDate,
         });
       }
       toast('success', `${cart.length} retirada(s) registrada(s) com sucesso!`);

@@ -70,7 +70,7 @@ export function SignatureInput({ label = 'Assinatura Digital', value, onChange, 
     lastPos.current = null;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL('image/png');
+    const dataUrl = canvas.toDataURL('image/webp', 0.5);
     setHasSig(true);
     onChange(dataUrl);
   }, [onChange]);

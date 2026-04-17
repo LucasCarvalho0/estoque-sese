@@ -18,7 +18,7 @@ interface AppCtx {
   addTool: (data: Omit<Tool, 'id' | 'createdAt' | 'shift'>) => Promise<void>;
   updateTool: (tool: Tool) => Promise<void>;
   deleteTool: (id: string) => Promise<void>;
-  addMovement: (data: Omit<Movement, 'id' | 'date'>) => Promise<void>;
+  addMovement: (data: Omit<Movement, 'id' | 'date'> & { date?: string }) => Promise<void>;
   returnMovement: (id: string, qty: number, sig: string, obs?: string) => Promise<void>;
   addInventory: (data: Omit<Inventory, 'id' | 'date'>) => Promise<void>;
   clearHistory: () => Promise<void>;
@@ -320,8 +320,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ─── Movements ─────────────────────────────────────────────────────────────
-  const addMovement = useCallback(async (data: Omit<Movement, 'id' | 'date'>) => {
-    const mov: Omit<Movement, 'id'> = { ...data, date: new Date().toISOString() };
+  const addMovement = useCallback(async (data: Omit<Movement, 'id' | 'date'> & { date?: string }) => {
+    const mov: Omit<Movement, 'id'> = { ...data, date: data.date || new Date().toISOString() };
     const saved = await db.insertMovement(mov);
     // Decrement available quantity in DB
     await db.updateToolAvailability(data.toolId, -data.quantity);
