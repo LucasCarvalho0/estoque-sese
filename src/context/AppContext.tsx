@@ -143,7 +143,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const [allEmployees, allTools, movements, inventories] = await Promise.all([
         db.fetchEmployees(),
         db.fetchTools(),
-        db.fetchMovements({ limit: 100 }), // Load only latest 100 initially
+        db.fetchMovements({ limit: 400 }), // Aumenta limite drásticamente para evitar paginação ocultando devoluções
         db.fetchInventories(),
       ]);
       // Filter by current shift in memory
