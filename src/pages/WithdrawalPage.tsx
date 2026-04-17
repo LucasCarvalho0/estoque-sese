@@ -57,6 +57,8 @@ export default function WithdrawalPage() {
       return; 
     }
 
+    setSubmitting(true);
+    try {
       const batchDate = new Date().toISOString();
       await Promise.all(cart.map(item => addMovement({
         employeeId,
