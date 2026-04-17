@@ -70,7 +70,19 @@ export function SignatureInput({ label = 'Assinatura Digital', value, onChange, 
     lastPos.current = null;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dataUrl = canvas.toDataURL('image/webp', 0.5);
+    
+    // Create a temporary canvas to draw the scaled-down flat JPEG
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvas.width / 2;
+    tempCanvas.height = canvas.height / 2;
+    const ctx = tempCanvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+      ctx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+    }
+    
+    const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.6);
     setHasSig(true);
     onChange(dataUrl);
   }, [onChange]);
