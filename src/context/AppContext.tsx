@@ -142,12 +142,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const shift = localStorage.getItem('sese_shift') || '';
-      const [allEmployees, allTools, movements, inventories] = await Promise.all([
+      const [allEmployees, allTools, recentMovements, pendingMovements, inventories] = await Promise.all([
         db.fetchEmployees(),
         db.fetchTools(),
-        db.fetchMovements({ limit: 400 }), // Aumenta limite drásticamente para evitar paginação ocultando devoluções
+        db.fetchMovements({ limit: 100 }), // Limite reduzido para 100 (economia de 90% de RAM em assinaturas)
+        db.fetchPendingMovements(), // Novo alvo: Puxa 100% das retiradas pendentes ignorando a barreira do limit
         db.fetchInventories(),
       ]);
+      
+      const movementsMap = new Map<string, Movement>();
+      // Insere os pendentes primeiro
+      pendingMovements.forEach(m => movementsMap.set(m.id, m));
+      // Sobrescreve/Insere os recentes (se houver conflito de "pendente recém chegado", não faz diferença pois os dados são iguais, mas os recentes trazem os status 'devolvido' tmb)
+      recentMovements.forEach(m => movementsMap.set(m.id, m));
+      
+      // Ordena união decrescente por data
+      const movements = Array.from(movementsMap.values()).sort((a, b) => b.date.localeCompare(a.date));
       // Filter by current shift in memory
       const employees = shift ? allEmployees.filter(e => e.shift === shift) : allEmployees;
       const tools = shift ? allTools.filter(t => t.shift === shift) : allTools;

@@ -144,6 +144,34 @@ export async function fetchMovements(options?: {
   }));
 }
 
+export async function fetchPendingMovements(shift?: string): Promise<Movement[]> {
+  let query = supabase
+    .from('movements')
+    .select('*')
+    .in('status', ['retirada', 'parcial'])
+    .order('date', { ascending: false });
+
+  if (shift) query = query.eq('shift', shift);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    employeeId: row.employee_id,
+    toolId: row.tool_id,
+    quantity: row.quantity,
+    signature: row.signature,
+    shift: row.shift,
+    date: row.date,
+    status: row.status,
+    returnQuantity: row.return_quantity ?? undefined,
+    returnSignature: row.return_signature ?? undefined,
+    returnDate: row.return_date ?? undefined,
+    observation: row.observation ?? undefined,
+  }));
+}
+
 export async function insertMovement(m: Omit<Movement, 'id'>): Promise<Movement> {
   const { data, error } = await supabase
     .from('movements')
