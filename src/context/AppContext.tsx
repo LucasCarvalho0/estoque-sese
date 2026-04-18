@@ -19,7 +19,9 @@ interface AppCtx {
   updateTool: (tool: Tool) => Promise<void>;
   deleteTool: (id: string) => Promise<void>;
   addMovement: (data: Omit<Movement, 'id' | 'date'> & { date?: string }) => Promise<void>;
+  addMovements: (data: (Omit<Movement, 'id' | 'date'> & { date?: string })[]) => Promise<void>;
   returnMovement: (id: string, qty: number, sig: string, obs?: string) => Promise<void>;
+  returnMovements: (returns: { id: string, qty: number, sig: string, obs?: string }[]) => Promise<void>;
   addInventory: (data: Omit<Inventory, 'id' | 'date'>) => Promise<void>;
   clearHistory: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -336,6 +338,46 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const addMovements = useCallback(async (movementsData: (Omit<Movement, 'id' | 'date'> & { date?: string })[]) => {
+    if (movementsData.length === 0) return;
+    
+    const newMovementsToInsert = movementsData.map(data => ({
+      ...data,
+      date: data.date || new Date().toISOString()
+    }));
+
+    // Insert all movements in one batch/payload
+    const savedMovements = await db.insertMovements(newMovementsToInsert);
+
+    // Prepare tool updates tracking cumulative changes to avoiding multiple subtractions on the same tool
+    const updates: { id: string, newQty: number }[] = [];
+    const updatedToolsMap = new Map<string, number>();
+
+    setState(s => {
+      movementsData.forEach(data => {
+        const currentQty = updatedToolsMap.get(data.toolId) ?? 
+          (s.tools.find(t => t.id === data.toolId)?.availableQuantity || 0);
+        const newQty = Math.max(0, currentQty - data.quantity);
+        updatedToolsMap.set(data.toolId, newQty);
+      });
+
+      updatedToolsMap.forEach((newQty, id) => {
+        updates.push({ id, newQty });
+      });
+      return s;
+    });
+
+    // Update Tools Availability optimized (concurrent requests without select)
+    await db.updateToolsAvailabilityOptimized(updates);
+
+    // Update state once
+    setState(s => ({
+      ...s,
+      movements: [...savedMovements, ...s.movements],
+      tools: s.tools.map(t => updatedToolsMap.has(t.id) ? { ...t, availableQuantity: updatedToolsMap.get(t.id)! } : t),
+    }));
+  }, []);
+
   const returnMovement = useCallback(async (id: string, qty: number, sig: string, obs?: string) => {
     const mov = state.movements.find(m => m.id === id);
     if (!mov) return;
@@ -361,6 +403,64 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ),
     }));
   }, [state.movements]);
+
+  const returnMovements = useCallback(async (returns: { id: string, qty: number, sig: string, obs?: string }[]) => {
+    if (returns.length === 0) return;
+
+    const returnDate = new Date().toISOString();
+    const updatedMovementsList: Movement[] = [];
+    const toolUpdatesMap = new Map<string, number>();
+
+    setState(s => {
+      returns.forEach(({ id, qty, sig, obs }) => {
+        const mov = s.movements.find(m => m.id === id);
+        if (!mov) return;
+        
+        const status: MovementStatus = qty >= mov.quantity ? 'devolvido' : obs ? 'falta' : 'parcial';
+        const updated: Movement = {
+          ...mov,
+          returnQuantity: qty,
+          returnSignature: sig,
+          returnDate,
+          observation: obs,
+          status,
+        };
+        updatedMovementsList.push(updated);
+
+        const currentToolQty = toolUpdatesMap.get(mov.toolId) ?? 
+          (s.tools.find(t => t.id === mov.toolId)?.availableQuantity || 0);
+        const toolData = s.tools.find(t => t.id === mov.toolId);
+        if (toolData) {
+          toolUpdatesMap.set(mov.toolId, Math.min(toolData.totalQuantity, currentToolQty + qty));
+        }
+      });
+      return s;
+    });
+
+    if (updatedMovementsList.length === 0) return;
+
+    // Update all movements concurrently
+    await db.updateMovements(updatedMovementsList);
+
+    // Prepare tool database updates
+    const updates: { id: string, newQty: number }[] = [];
+    toolUpdatesMap.forEach((newQty, id) => {
+      updates.push({ id, newQty });
+    });
+
+    // Update tools concurrently
+    await db.updateToolsAvailabilityOptimized(updates);
+
+    // Update state once
+    setState(s => ({
+      ...s,
+      movements: s.movements.map(m => {
+        const found = updatedMovementsList.find(um => um.id === m.id);
+        return found ? found : m;
+      }),
+      tools: s.tools.map(t => toolUpdatesMap.has(t.id) ? { ...t, availableQuantity: toolUpdatesMap.get(t.id)! } : t),
+    }));
+  }, []);
 
   // ─── Inventories ────────────────────────────────────────────────────────────
   const addInventory = useCallback(async (data: Omit<Inventory, 'id' | 'date'>) => {
@@ -391,7 +491,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setShift, setResponsible, toast, refresh, loadMoreMovements,
       addEmployee, updateEmployee, deleteEmployee,
       addTool, updateTool, deleteTool,
-      addMovement, returnMovement,
+      addMovement, addMovements, returnMovement, returnMovements,
       addInventory, clearHistory,
     }}>
       {children}

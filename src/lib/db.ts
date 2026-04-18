@@ -162,6 +162,35 @@ export async function insertMovement(m: Omit<Movement, 'id'>): Promise<Movement>
   return { ...m, id: data.id };
 }
 
+export async function insertMovements(movements: Omit<Movement, 'id'>[]): Promise<Movement[]> {
+  if (movements.length === 0) return [];
+  const payload = movements.map(m => ({
+    employee_id: m.employeeId,
+    tool_id: m.toolId,
+    quantity: m.quantity,
+    signature: m.signature,
+    shift: m.shift,
+    date: m.date,
+    status: m.status,
+  }));
+  const { data, error } = await supabase
+    .from('movements')
+    .insert(payload)
+    .select();
+  if (error) throw error;
+  
+  return data.map((row: any) => ({
+    id: row.id,
+    employeeId: row.employee_id,
+    toolId: row.tool_id,
+    quantity: row.quantity,
+    signature: row.signature,
+    shift: row.shift,
+    date: row.date,
+    status: row.status,
+  }));
+}
+
 export async function updateMovement(m: Movement): Promise<void> {
   const { error } = await supabase
     .from('movements')
@@ -176,6 +205,19 @@ export async function updateMovement(m: Movement): Promise<void> {
   if (error) throw error;
 }
 
+export async function updateMovements(movements: Movement[]): Promise<void> {
+  if (movements.length === 0) return;
+  await Promise.all(movements.map(m => 
+    supabase.from('movements').update({
+      status: m.status,
+      return_quantity: m.returnQuantity ?? null,
+      return_signature: m.returnSignature ?? null,
+      return_date: m.returnDate ?? null,
+      observation: m.observation ?? null,
+    }).eq('id', m.id)
+  ));
+}
+
 export async function updateToolAvailability(toolId: string, delta: number): Promise<void> {
   const { data, error: fetchErr } = await supabase
     .from('tools')
@@ -186,6 +228,13 @@ export async function updateToolAvailability(toolId: string, delta: number): Pro
   const newQty = Math.max(0, (data.available_quantity ?? 0) + delta);
   const { error } = await supabase.from('tools').update({ available_quantity: newQty }).eq('id', toolId);
   if (error) throw error;
+}
+
+export async function updateToolsAvailabilityOptimized(updates: { id: string, newQty: number }[]): Promise<void> {
+  if (updates.length === 0) return;
+  await Promise.all(updates.map(u => 
+    supabase.from('tools').update({ available_quantity: u.newQty }).eq('id', u.id)
+  ));
 }
 
 // ─── Inventories ─────────────────────────────────────────────────────────────

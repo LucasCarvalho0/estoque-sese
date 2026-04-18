@@ -16,7 +16,7 @@ interface Batch {
 }
 
 export default function ReturnPage() {
-  const { state, returnMovement, toast } = useApp();
+  const { state, returnMovements, toast } = useApp();
   const [search, setSearch] = useState('');
   const [selectedBatch, setSelectedBatch] = useState<Batch | null>(null);
   const [returnQtys, setReturnQtys] = useState<Record<string, number>>({});
@@ -82,13 +82,18 @@ export default function ReturnPage() {
 
     setSubmitting(true);
     try {
-      for (const m of selectedBatch.movements) {
-        await returnMovement(m.id, returnQtys[m.id] ?? m.quantity, signature, observations[m.id] || undefined);
-      }
+      const returns = selectedBatch.movements.map(m => ({
+        id: m.id,
+        qty: returnQtys[m.id] ?? m.quantity,
+        sig: signature,
+        obs: observations[m.id] || undefined
+      }));
+      await returnMovements(returns);
       toast('success', `Devolução de ${selectedBatch.movements.length} ferramenta(s) registrada!`);
       setSelectedBatch(null);
       setSearch('');
     } catch (err: any) {
+      console.error('Erro na devolução (Turno/Dados):', err);
       toast('error', err.message ?? 'Erro ao registrar devolução.');
     } finally {
       setSubmitting(false);

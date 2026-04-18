@@ -11,7 +11,7 @@ interface CartItem {
 }
 
 export default function WithdrawalPage() {
-  const { state, addMovement, toast } = useApp();
+  const { state, addMovements, toast } = useApp();
   const [employeeId, setEmployeeId] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedToolId, setSelectedToolId] = useState('');
@@ -60,7 +60,7 @@ export default function WithdrawalPage() {
     setSubmitting(true);
     try {
       const batchDate = new Date().toISOString();
-      await Promise.all(cart.map(item => addMovement({
+      await addMovements(cart.map(item => ({
         employeeId,
         toolId: item.toolId,
         quantity: item.quantity,
@@ -74,6 +74,7 @@ export default function WithdrawalPage() {
       setCart([]);
       setSignature('');
     } catch (err: any) {
+      console.error('Erro no salvamento (Turno/Dados):', err);
       toast('error', err.message ?? 'Erro ao registrar retirada.');
     } finally {
       setSubmitting(false);
