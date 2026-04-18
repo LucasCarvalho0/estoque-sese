@@ -28,14 +28,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const mobileNav = nav.filter(n => n.mobile);
 
   return (
-    <div className="flex min-h-screen w-full bg-dark-900 text-slate-100 px-safe pt-safe overflow-x-hidden">
+    <div className="flex h-[100dvh] w-full bg-dark-900 text-slate-100 px-safe overflow-hidden">
       {/* Overlay */}
       {sideOpen && (
         <div className="fixed inset-0 bg-black/80 z-40 lg:hidden backdrop-blur-md transition-all duration-300" onClick={() => setSideOpen(false)} />
       )}
 
       {/* Sidebar (Desktop & Mobile Drawer) */}
-      <aside className={`fixed lg:sticky top-0 h-[100dvh] z-50 w-72 bg-dark-800 border-r border-dark-700 flex flex-col transition-transform duration-300 ease-in-out shrink-0
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-72 bg-dark-800 border-r border-dark-700 flex flex-col shrink-0 transition-transform duration-300 ease-in-out
         ${sideOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         
         {/* Logo Section */}
@@ -112,9 +112,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-dark-900 pb-20 lg:pb-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-dark-900 h-[100dvh]">
         {/* Top Header */}
-        <header className="h-16 lg:h-20 bg-dark-900/80 backdrop-blur-xl border-b border-dark-700 px-4 lg:px-8 flex items-center justify-between shrink-0 sticky top-0 z-30">
+        <header className="h-16 lg:h-20 bg-dark-900/80 backdrop-blur-xl border-b border-dark-700 px-4 lg:px-8 flex items-center justify-between shrink-0 z-30">
           <div className="flex items-center gap-3 min-w-0">
             <button
               className="lg:hidden p-2.5 -ml-1 rounded-xl bg-dark-800 text-slate-300 active:scale-90 transition-transform border border-dark-700"
@@ -157,7 +157,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content Area */}
-        <main className="p-4 lg:p-10 max-w-7xl mx-auto w-full">
+        <main className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-10 pb-24 lg:pb-10 max-w-7xl mx-auto w-full">
           {children}
         </main>
 
