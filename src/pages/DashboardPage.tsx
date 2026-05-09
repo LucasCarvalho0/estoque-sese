@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Users, Wrench, ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle, Clock, ClipboardList, History as HistoryIcon } from 'lucide-react';
+import { Users, Wrench, ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle, Clock, ClipboardList, History as HistoryIcon, Download } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { StatCard } from '../components/StatCard';
 import { SHIFTS } from '../constants';
@@ -65,6 +65,7 @@ export default function DashboardPage() {
           {[
             { to: '/retirada', icon: ArrowUpFromLine, label: 'Nova Retirada', desc: 'Saída de ferramentas', color: 'bg-gold-500/10 text-gold-400' },
             { to: '/devolucao', icon: ArrowDownToLine, label: 'Registrar Devolução', desc: 'Entrada no estoque', color: 'bg-emerald-500/10 text-emerald-400' },
+            { to: '/historico?report=today', icon: Download, label: 'Relatório Diário', desc: 'Baixar resumo de hoje', color: 'bg-emerald-600/10 text-emerald-500' },
             { to: '/historico', icon: HistoryIcon, label: 'Ver Histórico', desc: 'Relatórios e logs', color: 'bg-blue-500/10 text-blue-400' },
             { to: '/inventario', icon: ClipboardList, label: 'Inventário Geral', desc: 'Contagem de itens', color: 'bg-purple-500/10 text-purple-400' },
           ].map(({ to, icon: Icon, label, desc, color }) => (

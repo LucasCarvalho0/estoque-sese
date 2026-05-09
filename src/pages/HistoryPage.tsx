@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { History as HistoryIcon, Download, Filter, ChevronDown, User, Package, Calendar, Clock, Search, X, AlertCircle, Loader2, Trash2, CheckCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { EmptyState } from '../components/EmptyState';
@@ -28,6 +29,26 @@ export default function HistoryPage() {
   const [filterDateTo, setFilterDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('report') === 'today') {
+      const today = new Date().toISOString().split('T')[0];
+      setFilterDateFrom(today);
+      setFilterDateTo(today);
+      setFilterShift(state.currentShift || '');
+      
+      // Limpa o parâmetro para não gerar de novo no refresh
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('report');
+      setSearchParams(newParams);
+      
+      toast('info', 'Gerando relatório de hoje...');
+      setTimeout(() => {
+        exportPDF();
+      }, 500);
+    }
+  }, [searchParams, state.currentShift]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function getName(id: string) { return state.employees.find(e => e.id === id)?.name ?? '—'; }
   function getMatricula(id: string) { return state.employees.find(e => e.id === id)?.matricula ?? ''; }
@@ -191,6 +212,18 @@ export default function HistoryPage() {
     doc.save('historico-sese.pdf');
   }
 
+  function exportDailyReport() {
+    const today = new Date().toISOString().split('T')[0];
+    setFilterDateFrom(today);
+    setFilterDateTo(today);
+    setFilterShift(state.currentShift || '');
+    
+    // Pequeno delay para garantir que o useMemo do 'filtered' atualize antes de exportar
+    setTimeout(() => {
+      exportPDF();
+    }, 100);
+  }
+
   async function exportXLSX() {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('Histórico');
@@ -352,6 +385,10 @@ export default function HistoryPage() {
           </button>
           <button className="btn-secondary py-2.5 flex-1 sm:flex-none text-[10px] font-black" onClick={exportXLSX}>
             <Download size={14} className="sm:w-4 sm:h-4" /> <span>EXCEL</span>
+          </button>
+          
+          <button className="btn-primary py-2.5 flex-1 sm:flex-none text-[10px] font-black bg-emerald-600 hover:bg-emerald-500 border-none shadow-lg shadow-emerald-500/20" onClick={exportDailyReport}>
+            <Calendar size={14} className="sm:w-4 sm:h-4" /> <span>RELATÓRIO DE HOJE</span>
           </button>
           
           <button 
