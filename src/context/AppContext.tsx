@@ -351,42 +351,49 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addMovements = useCallback(async (movementsData: (Omit<Movement, 'id' | 'date'> & { date?: string })[]) => {
     if (movementsData.length === 0) return;
     
+    // Prepare movements with dates
     const newMovementsToInsert = movementsData.map(data => ({
       ...data,
       date: data.date || new Date().toISOString()
     }));
 
-    // Insert all movements in one batch/payload
-    const savedMovements = await db.insertMovements(newMovementsToInsert);
+    try {
+      // 1. Insert all movements first
+      const savedMovements = await db.insertMovements(newMovementsToInsert);
 
-    // Prepare tool updates tracking cumulative changes to avoiding multiple subtractions on the same tool
-    const updates: { id: string, newQty: number }[] = [];
-    const updatedToolsMap = new Map<string, number>();
+      // 2. Calculate tool updates
+      const toolUpdates: { id: string, newQty: number }[] = [];
+      const updatedToolsMap = new Map<string, number>();
 
-    setState(s => {
       movementsData.forEach(data => {
         const currentQty = updatedToolsMap.get(data.toolId) ?? 
-          (s.tools.find(t => t.id === data.toolId)?.availableQuantity || 0);
+          (state.tools.find(t => t.id === data.toolId)?.availableQuantity || 0);
         const newQty = Math.max(0, currentQty - data.quantity);
         updatedToolsMap.set(data.toolId, newQty);
       });
 
       updatedToolsMap.forEach((newQty, id) => {
-        updates.push({ id, newQty });
+        toolUpdates.push({ id, newQty });
       });
-      return s;
-    });
 
-    // Update Tools Availability optimized (concurrent requests without select)
-    await db.updateToolsAvailabilityOptimized(updates);
+      // 3. Update Tools Availability in DB (Sequential as now refactored in db.ts)
+      await db.updateToolsAvailabilityOptimized(toolUpdates);
 
-    // Update state once
-    setState(s => ({
-      ...s,
-      movements: [...savedMovements, ...s.movements],
-      tools: s.tools.map(t => updatedToolsMap.has(t.id) ? { ...t, availableQuantity: updatedToolsMap.get(t.id)! } : t),
-    }));
-  }, []);
+      // 4. Update local state
+      setState(s => ({
+        ...s,
+        movements: [...savedMovements, ...s.movements],
+        tools: s.tools.map(t => updatedToolsMap.has(t.id) ? { ...t, available_quantity: updatedToolsMap.get(t.id)! } as any : t),
+      }));
+
+      // Final refresh to ensure everything is in sync
+      await refresh();
+    } catch (err: any) {
+      console.error('Erro crítico ao salvar retiradas:', err);
+      toast('error', `Falha ao salvar: ${err.message || 'Erro de conexão'}`);
+      throw err;
+    }
+  }, [state.tools, refresh, toast]);
 
   const returnMovement = useCallback(async (id: string, qty: number, sig: string, obs?: string) => {
     const mov = state.movements.find(m => m.id === id);
@@ -421,9 +428,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const updatedMovementsList: Movement[] = [];
     const toolUpdatesMap = new Map<string, number>();
 
-    setState(s => {
+    try {
+      // 1. Prepare updates and calculate new quantities
       returns.forEach(({ id, qty, sig, obs }) => {
-        const mov = s.movements.find(m => m.id === id);
+        const mov = state.movements.find(m => m.id === id);
         if (!mov) return;
         
         const status: MovementStatus = qty >= mov.quantity ? 'devolvido' : obs ? 'falta' : 'parcial';
@@ -438,39 +446,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updatedMovementsList.push(updated);
 
         const currentToolQty = toolUpdatesMap.get(mov.toolId) ?? 
-          (s.tools.find(t => t.id === mov.toolId)?.availableQuantity || 0);
-        const toolData = s.tools.find(t => t.id === mov.toolId);
+          (state.tools.find(t => t.id === mov.toolId)?.availableQuantity || 0);
+        const toolData = state.tools.find(t => t.id === mov.toolId);
         if (toolData) {
           toolUpdatesMap.set(mov.toolId, Math.min(toolData.totalQuantity, currentToolQty + qty));
         }
       });
-      return s;
-    });
 
-    if (updatedMovementsList.length === 0) return;
+      if (updatedMovementsList.length === 0) return;
 
-    // Update all movements concurrently
-    await db.updateMovements(updatedMovementsList);
+      // 2. Update all movements (Sequential updates)
+      await db.updateMovements(updatedMovementsList);
 
-    // Prepare tool database updates
-    const updates: { id: string, newQty: number }[] = [];
-    toolUpdatesMap.forEach((newQty, id) => {
-      updates.push({ id, newQty });
-    });
+      // 3. Update Tools Availability (Sequential updates)
+      const toolUpdates: { id: string, newQty: number }[] = [];
+      toolUpdatesMap.forEach((newQty, id) => {
+        toolUpdates.push({ id, newQty });
+      });
+      await db.updateToolsAvailabilityOptimized(toolUpdates);
 
-    // Update tools concurrently
-    await db.updateToolsAvailabilityOptimized(updates);
+      // 4. Update local state
+      setState(s => ({
+        ...s,
+        movements: s.movements.map(m => {
+          const found = updatedMovementsList.find(um => um.id === m.id);
+          return found ? found : m;
+        }),
+        tools: s.tools.map(t => toolUpdatesMap.has(t.id) ? { ...t, availableQuantity: toolUpdatesMap.get(t.id)! } : t),
+      }));
 
-    // Update state once
-    setState(s => ({
-      ...s,
-      movements: s.movements.map(m => {
-        const found = updatedMovementsList.find(um => um.id === m.id);
-        return found ? found : m;
-      }),
-      tools: s.tools.map(t => toolUpdatesMap.has(t.id) ? { ...t, availableQuantity: toolUpdatesMap.get(t.id)! } : t),
-    }));
-  }, []);
+      // Ensure sync
+      await refresh();
+    } catch (err: any) {
+      console.error('Erro crítico na devolução:', err);
+      toast('error', `Falha ao devolver: ${err.message || 'Erro de conexão'}`);
+      throw err;
+    }
+  }, [state.movements, state.tools, refresh, toast]);
 
   // ─── Inventories ────────────────────────────────────────────────────────────
   const addInventory = useCallback(async (data: Omit<Inventory, 'id' | 'date'>) => {

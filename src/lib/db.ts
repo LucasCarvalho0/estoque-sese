@@ -235,15 +235,16 @@ export async function updateMovement(m: Movement): Promise<void> {
 
 export async function updateMovements(movements: Movement[]): Promise<void> {
   if (movements.length === 0) return;
-  await Promise.all(movements.map(m => 
-    supabase.from('movements').update({
+  for (const m of movements) {
+    const { error } = await supabase.from('movements').update({
       status: m.status,
       return_quantity: m.returnQuantity ?? null,
       return_signature: m.returnSignature ?? null,
       return_date: m.returnDate ?? null,
       observation: m.observation ?? null,
-    }).eq('id', m.id)
-  ));
+    }).eq('id', m.id);
+    if (error) throw error;
+  }
 }
 
 export async function updateToolAvailability(toolId: string, delta: number): Promise<void> {
@@ -260,9 +261,10 @@ export async function updateToolAvailability(toolId: string, delta: number): Pro
 
 export async function updateToolsAvailabilityOptimized(updates: { id: string, newQty: number }[]): Promise<void> {
   if (updates.length === 0) return;
-  await Promise.all(updates.map(u => 
-    supabase.from('tools').update({ available_quantity: u.newQty }).eq('id', u.id)
-  ));
+  for (const u of updates) {
+    const { error } = await supabase.from('tools').update({ available_quantity: u.newQty }).eq('id', u.id);
+    if (error) throw error;
+  }
 }
 
 // ─── Inventories ─────────────────────────────────────────────────────────────
