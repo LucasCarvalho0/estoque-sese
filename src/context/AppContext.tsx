@@ -383,14 +383,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setState(s => ({
         ...s,
         movements: [...savedMovements, ...s.movements],
-        tools: s.tools.map(t => updatedToolsMap.has(t.id) ? { ...t, available_quantity: updatedToolsMap.get(t.id)! } as any : t),
+        tools: s.tools.map(t => updatedToolsMap.has(t.id) ? { ...t, availableQuantity: updatedToolsMap.get(t.id)! } : t),
       }));
 
       // Final refresh to ensure everything is in sync
-      await refresh();
+      try {
+        await refresh();
+      } catch (e) {
+        console.warn('Erro ao atualizar dados após salvamento (não crítico):', e);
+      }
     } catch (err: any) {
-      console.error('Erro crítico ao salvar retiradas:', err);
-      toast('error', `Falha ao salvar: ${err.message || 'Erro de conexão'}`);
+      console.error('Erro detalhado no salvamento:', {
+        message: err.message,
+        stack: err.stack,
+        payloadSize: JSON.stringify(newMovementsToInsert).length
+      });
+      toast('error', `Falha ao salvar: ${err.message || 'Erro de conexão'}. Verifique sua internet ou se o projeto Supabase está ativo.`);
       throw err;
     }
   }, [state.tools, refresh, toast]);
