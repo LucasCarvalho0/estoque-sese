@@ -24,8 +24,8 @@ export default function EmployeesPage() {
   function openAdd() { setEditing(null); setForm(EMPTY); setModal(true); }
   function openEdit(e: Employee) { setEditing(e); setForm({ name: e.name, matricula: e.matricula, active: e.active }); setModal(true); }
 
-  async function handleSave(ev: React.FormEvent) {
-    ev.preventDefault();
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
     if (!form.name.trim()) { toast('error', 'Nome é obrigatório.'); return; }
     setSaving(true);
     try {

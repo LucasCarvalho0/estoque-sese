@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Employee {
+  id         String   @id @default(uuid())
+  name       String
+  matricula  String   @default("")
+  active     Boolean  @default(true)
+  shift      String
+  created_at DateTime @default(now())
+
+  movements Movement[]
+
+  @@map("employees")
+}
+
+model Tool {
+  id                 String   @id @default(uuid())
+  name               String
+  code               String   @unique
+  total_quantity     Int
+  available_quantity Int
+  description        String   @default("")
+  shift              String
+  created_at         DateTime @default(now())
+
+  movements Movement[]
+
+  @@map("tools")
+}
+
+model Movement {
+  id               String    @id @default(uuid())
+  employee_id      String
+  tool_id          String
+  quantity         Int
+  signature        String
+  shift            String
+  date             DateTime
+  status           String    @default("retirada")
+  return_quantity  Int?
+  return_signature String?
+  return_date      DateTime?
+  observation      String?
+
+  employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  tool     Tool     @relation(fields: [tool_id], references: [id], onDelete: Cascade)
+
+  @@map("movements")
+}
+
+model Inventory {
+  id         String   @id @default(uuid())
+  date       DateTime
+  shift      String
+  type       String
+  items      Json
+  notes      String   @default("")
+  created_by String   @default("")
+
+  @@map("inventories")
+}
+
+model ActiveSession {
+  id                    String   @id @default(uuid())
+  current_shift         String
+  responsible_name      String?
+  responsible_matricula String?
+  session_key           String?
+  updated_at            DateTime @default(now()) @updatedAt
+
+  @@map("active_sessions")
+}

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { v4 as uuid } from 'uuid';
-import { supabase } from '../lib/supabase';
 import * as db from '../lib/db';
 import { AppState, Employee, Tool, Movement, Inventory, ShiftId, ToastMessage, MovementStatus, Responsible } from '../types';
 import { SHIFTS } from '../constants';
@@ -224,7 +223,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } else {
       localStorage.removeItem('sese_shift');
       try { await db.deleteSession(); } catch {}
-      supabase.auth.signOut();
       setState(() => ({ ...EMPTY_STATE }));
     }
   }, []);

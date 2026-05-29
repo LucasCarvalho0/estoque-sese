@@ -1,360 +1,179 @@
-import { supabase } from './supabase';
 import { Employee, Tool, Movement, Inventory } from '../types';
 
-// ─── Employees ──────────────────────────────────────────────────────────────
+const API = '/api';
+
+async function api<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${API}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
+  return data as T;
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+export async function loginShift(shiftId: string, password: string): Promise<void> {
+  await api('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ shiftId, password }),
+  });
+}
+
+// ─── Employees ───────────────────────────────────────────────────────────────
 export async function fetchEmployees(): Promise<Employee[]> {
-  const { data, error } = await supabase
-    .from('employees')
-    .select('*')
-    .order('created_at', { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    matricula: row.matricula ?? '',
-    active: row.active,
-    shift: (row.shift ?? '1') as any,
-    createdAt: row.created_at,
-  }));
+  return api<Employee[]>('/employees');
 }
 
 export async function insertEmployee(emp: Omit<Employee, 'id' | 'createdAt'>): Promise<Employee> {
-  const { data, error } = await supabase
-    .from('employees')
-    .insert({ name: emp.name, matricula: emp.matricula, active: emp.active, shift: emp.shift })
-    .select()
-    .single();
-  if (error) {
-    console.error('Erro ao inserir funcionário:', error);
-    throw error;
-  }
-  return { id: data.id, name: data.name, matricula: data.matricula ?? '', active: data.active, shift: data.shift, createdAt: data.created_at };
+  return api<Employee>('/employees', {
+    method: 'POST',
+    body: JSON.stringify(emp),
+  });
 }
 
 export async function updateEmployee(emp: Employee): Promise<void> {
-  const { error } = await supabase
-    .from('employees')
-    .update({ name: emp.name, matricula: emp.matricula, active: emp.active })
-    .eq('id', emp.id);
-  if (error) throw error;
+  await api(`/employees/${emp.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name: emp.name, matricula: emp.matricula, active: emp.active }),
+  });
 }
 
 export async function deleteEmployee(id: string): Promise<void> {
-  const { error } = await supabase.from('employees').delete().eq('id', id);
-  if (error) throw error;
+  await api(`/employees/${id}`, { method: 'DELETE' });
 }
 
-// ─── Tools ──────────────────────────────────────────────────────────────────
+// ─── Tools ───────────────────────────────────────────────────────────────────
 export async function fetchTools(): Promise<Tool[]> {
-  const { data, error } = await supabase
-    .from('tools')
-    .select('*')
-    .order('created_at', { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    name: row.name,
-    code: row.code,
-    totalQuantity: row.total_quantity,
-    availableQuantity: row.available_quantity,
-    description: row.description ?? '',
-    shift: (row.shift ?? '1') as any,
-    createdAt: row.created_at,
-  }));
+  return api<Tool[]>('/tools');
 }
 
 export async function insertTool(tool: Omit<Tool, 'id' | 'createdAt'>): Promise<Tool> {
-  const { data, error } = await supabase
-    .from('tools')
-    .insert({
-      name: tool.name,
-      code: tool.code,
-      total_quantity: tool.totalQuantity,
-      available_quantity: tool.availableQuantity,
-      description: tool.description,
-      shift: tool.shift,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return { id: data.id, name: data.name, code: data.code, totalQuantity: data.total_quantity, availableQuantity: data.available_quantity, description: data.description ?? '', shift: data.shift, createdAt: data.created_at };
+  return api<Tool>('/tools', {
+    method: 'POST',
+    body: JSON.stringify(tool),
+  });
 }
 
 export async function updateTool(tool: Tool): Promise<void> {
-  const { error } = await supabase
-    .from('tools')
-    .update({
+  await api(`/tools/${tool.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
       name: tool.name,
       code: tool.code,
-      total_quantity: tool.totalQuantity,
-      available_quantity: tool.availableQuantity,
+      totalQuantity: tool.totalQuantity,
+      availableQuantity: tool.availableQuantity,
       description: tool.description,
-    })
-    .eq('id', tool.id);
-  if (error) throw error;
+    }),
+  });
 }
 
 export async function deleteTool(id: string): Promise<void> {
-  const { error } = await supabase.from('tools').delete().eq('id', id);
-  if (error) throw error;
+  await api(`/tools/${id}`, { method: 'DELETE' });
 }
 
-// ─── Movements ──────────────────────────────────────────────────────────────
-export async function fetchMovements(options?: { 
-  limit?: number; 
-  offset?: number;
-  shift?: string;
-  toolId?: string;
-  employeeId?: string;
-  dateFrom?: string;
-}): Promise<Movement[]> {
-  let query = supabase
-    .from('movements')
-    .select('*', { count: 'exact' });
-
-  if (options?.shift) query = query.eq('shift', options.shift);
-  if (options?.toolId) query = query.eq('tool_id', options.toolId);
-  if (options?.employeeId) query = query.eq('employee_id', options.employeeId);
-  if (options?.dateFrom) query = query.gte('date', options.dateFrom);
-
-  query = query.order('date', { ascending: false });
-
-  if (options?.limit) {
-    const from = options.offset || 0;
-    const to = from + options.limit - 1;
-    query = query.range(from, to);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-  
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    employeeId: row.employee_id,
-    toolId: row.tool_id,
-    quantity: row.quantity,
-    signature: row.signature,
-    shift: row.shift,
-    date: row.date,
-    status: row.status,
-    returnQuantity: row.return_quantity ?? undefined,
-    returnSignature: row.return_signature ?? undefined,
-    returnDate: row.return_date ?? undefined,
-    observation: row.observation ?? undefined,
-  }));
+// ─── Movements ───────────────────────────────────────────────────────────────
+export async function fetchMovements(options?: { limit?: number; offset?: number }): Promise<Movement[]> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set('limit', String(options.limit));
+  if (options?.offset) params.set('offset', String(options.offset));
+  return api<Movement[]>(`/movements?${params.toString()}`);
 }
 
-export async function fetchPendingMovements(shift?: string): Promise<Movement[]> {
-  let query = supabase
-    .from('movements')
-    .select('*')
-    .in('status', ['retirada', 'parcial'])
-    .order('date', { ascending: false });
-
-  if (shift) query = query.eq('shift', shift);
-
-  const { data, error } = await query;
-  if (error) throw error;
-  
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    employeeId: row.employee_id,
-    toolId: row.tool_id,
-    quantity: row.quantity,
-    signature: row.signature,
-    shift: row.shift,
-    date: row.date,
-    status: row.status,
-    returnQuantity: row.return_quantity ?? undefined,
-    returnSignature: row.return_signature ?? undefined,
-    returnDate: row.return_date ?? undefined,
-    observation: row.observation ?? undefined,
-  }));
+export async function fetchPendingMovements(): Promise<Movement[]> {
+  return api<Movement[]>('/movements?pendingOnly=true');
 }
 
 export async function insertMovement(m: Omit<Movement, 'id'>): Promise<Movement> {
-  const { data, error } = await supabase
-    .from('movements')
-    .insert({
-      employee_id: m.employeeId,
-      tool_id: m.toolId,
-      quantity: m.quantity,
-      signature: m.signature,
-      shift: m.shift,
-      date: m.date,
-      status: m.status,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return { ...m, id: data.id };
+  const result = await api<Movement[]>('/movements', {
+    method: 'POST',
+    body: JSON.stringify([m]),
+  });
+  return result[0];
 }
 
 export async function insertMovements(movements: Omit<Movement, 'id'>[]): Promise<Movement[]> {
-  if (movements.length === 0) return [];
-  const payload = movements.map(m => ({
-    employee_id: m.employeeId,
-    tool_id: m.toolId,
-    quantity: m.quantity,
-    signature: m.signature,
-    shift: m.shift,
-    date: m.date,
-    status: m.status,
-  }));
-  const { data, error } = await supabase
-    .from('movements')
-    .insert(payload)
-    .select();
-  if (error) throw error;
-  
-  return data.map((row: any) => ({
-    id: row.id,
-    employeeId: row.employee_id,
-    toolId: row.tool_id,
-    quantity: row.quantity,
-    signature: row.signature,
-    shift: row.shift,
-    date: row.date,
-    status: row.status,
-  }));
+  return api<Movement[]>('/movements', {
+    method: 'POST',
+    body: JSON.stringify(movements),
+  });
 }
 
 export async function updateMovement(m: Movement): Promise<void> {
-  const { error } = await supabase
-    .from('movements')
-    .update({
+  await api(`/movements/${m.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({
       status: m.status,
-      return_quantity: m.returnQuantity ?? null,
-      return_signature: m.returnSignature ?? null,
-      return_date: m.returnDate ?? null,
+      returnQuantity: m.returnQuantity ?? null,
+      returnSignature: m.returnSignature ?? null,
+      returnDate: m.returnDate ?? null,
       observation: m.observation ?? null,
-    })
-    .eq('id', m.id);
-  if (error) throw error;
+    }),
+  });
 }
 
 export async function updateMovements(movements: Movement[]): Promise<void> {
-  if (movements.length === 0) return;
+  // Use sequential updates via existing endpoint
   for (const m of movements) {
-    const { error } = await supabase.from('movements').update({
-      status: m.status,
-      return_quantity: m.returnQuantity ?? null,
-      return_signature: m.returnSignature ?? null,
-      return_date: m.returnDate ?? null,
-      observation: m.observation ?? null,
-    }).eq('id', m.id);
-    if (error) throw error;
+    await updateMovement(m);
   }
 }
 
-export async function updateToolAvailability(toolId: string, delta: number): Promise<void> {
-  const { data, error: fetchErr } = await supabase
-    .from('tools')
-    .select('available_quantity')
-    .eq('id', toolId)
-    .single();
-  if (fetchErr) throw fetchErr;
-  const newQty = Math.max(0, (data.available_quantity ?? 0) + delta);
-  const { error } = await supabase.from('tools').update({ available_quantity: newQty }).eq('id', toolId);
-  if (error) throw error;
+export async function returnMovementsBulk(
+  returns: { id: string; qty: number; sig: string; obs?: string; toolId: string; movQty: number }[]
+): Promise<void> {
+  await api('/movements/bulk-return', {
+    method: 'POST',
+    body: JSON.stringify(returns),
+  });
 }
 
-export async function updateToolsAvailabilityOptimized(updates: { id: string, newQty: number }[]): Promise<void> {
-  if (updates.length === 0) return;
-  for (const u of updates) {
-    const { error } = await supabase.from('tools').update({ available_quantity: u.newQty }).eq('id', u.id);
-    if (error) throw error;
-  }
+// Keep for compatibility - no longer needed but referenced by context
+export async function updateToolAvailability(_toolId: string, _delta: number): Promise<void> {
+  // Handled server-side in movement endpoints
+}
+
+export async function updateToolsAvailabilityOptimized(_updates: { id: string; newQty: number }[]): Promise<void> {
+  // Handled server-side in movement endpoints
+}
+
+export async function clearAllMovements(): Promise<void> {
+  await api('/movements', { method: 'DELETE' });
 }
 
 // ─── Inventories ─────────────────────────────────────────────────────────────
 export async function fetchInventories(): Promise<Inventory[]> {
-  const { data, error } = await supabase
-    .from('inventories')
-    .select('*')
-    .order('date', { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    date: row.date,
-    shift: row.shift,
-    type: row.type,
-    items: row.items ?? [],
-    notes: row.notes ?? '',
-    createdBy: row.created_by ?? '',
-  }));
+  return api<Inventory[]>('/inventories');
 }
 
 export async function insertInventory(inv: Omit<Inventory, 'id'>): Promise<Inventory> {
-  const { data, error } = await supabase
-    .from('inventories')
-    .insert({
-      date: inv.date,
-      shift: inv.shift,
-      type: inv.type,
-      items: inv.items,
-      notes: inv.notes,
-      created_by: inv.createdBy,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return { ...inv, id: data.id };
-}
-// ─── Sessions (Multi-device Sync) ───────────────────────────────────────────
-export async function fetchSession() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data, error } = await supabase
-    .from('active_sessions')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-  if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
-  return data ? {
-    currentShift: data.current_shift as any,
-    responsibleName: data.responsible_name,
-    responsibleMatricula: data.responsible_matricula,
-    sessionKey: data.session_key
-  } : null;
-}
-
-export async function upsertSession(data: { 
-  currentShift: string, 
-  responsibleName?: string, 
-  responsibleMatricula?: string,
-  sessionKey?: string
-}) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  const { error } = await supabase
-    .from('active_sessions')
-    .upsert({
-      id: user.id,
-      current_shift: data.currentShift,
-      responsible_name: data.responsibleName || null,
-      responsible_matricula: data.responsibleMatricula || null,
-      session_key: data.sessionKey || null,
-      updated_at: new Date().toISOString()
-    });
-  if (error) throw error;
-}
-
-export async function deleteSession() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-  await supabase.from('active_sessions').delete().eq('id', user.id);
-}
-
-// ─── Cleaning (Resets) ──────────────────────────────────────────────────────
-export async function clearAllMovements(): Promise<void> {
-  // We use .neq('id', '0') to bypass Supabase's mandatory where clause for delete operations
-  const { error } = await supabase.from('movements').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  if (error) throw error;
+  return api<Inventory>('/inventories', {
+    method: 'POST',
+    body: JSON.stringify(inv),
+  });
 }
 
 export async function clearAllInventories(): Promise<void> {
-  const { error } = await supabase.from('inventories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-  if (error) throw error;
+  await api('/inventories', { method: 'DELETE' });
 }
 
+// ─── Session ─────────────────────────────────────────────────────────────────
+export async function fetchSession() {
+  return api<{ currentShift: string; responsibleName?: string; responsibleMatricula?: string; sessionKey?: string } | null>('/session');
+}
+
+export async function upsertSession(data: {
+  currentShift: string;
+  responsibleName?: string;
+  responsibleMatricula?: string;
+  sessionKey?: string;
+}): Promise<void> {
+  await api('/session', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteSession(): Promise<void> {
+  await api('/session', { method: 'DELETE' });
+}

@@ -3,7 +3,7 @@ import { Wrench, ChevronRight, Loader2, Eye, EyeOff, ShieldCheck, Clock } from '
 import { useApp } from '../context/AppContext';
 import { SHIFTS } from '../constants';
 import { ShiftId } from '../types';
-import { supabase } from '../lib/supabase';
+import { loginShift } from '../lib/db';
 
 export default function LoginPage() {
   const { setShift, toast } = useApp();
@@ -26,22 +26,11 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: shift.email, password });
-
-      if (error) {
-        if (password === shift.password) {
-          console.warn('Usando bypass de desenvolvedor para acesso ao turno.');
-        } else {
-          toast('error', 'Senha incorreta. Tente novamente.');
-          setLoading(false);
-          return;
-        }
-      }
-
+      await loginShift(shift.id, password);
       setShift(shift.id);
       toast('success', `Bem-vindo ao ${shift.label}!`);
     } catch (err: any) {
-      toast('error', err.message ?? 'Erro ao autenticar.');
+      toast('error', err.message ?? 'Senha incorreta. Tente novamente.');
     } finally {
       setLoading(false);
     }
