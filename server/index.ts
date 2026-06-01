@@ -357,6 +357,10 @@ app.delete('/api/session', async (_req, res) => {
 });
 
 // ─── Start ───────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`✅ API Server running at http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`✅ API Server running at http://localhost:${PORT}`);
+  });
+}
+
+export default app;
