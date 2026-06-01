@@ -57,14 +57,31 @@ app.patch('/api/employees/:id', async (req, res) => {
       data: { name, matricula, active },
     });
     res.json({ id: row.id, name: row.name, matricula: row.matricula, active: row.active, shift: row.shift, createdAt: row.created_at.toISOString() });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+    } catch (e: any) {
+      if (e.code === 'P2025') {
+        res.status(404).json({ error: 'Funcionário não encontrado.' });
+      } else {
+        res.status(500).json({ error: e.message });
+      }
+    }
 });
 
 app.delete('/api/employees/:id', async (req, res) => {
   try {
-    await prisma.employee.delete({ where: { id: req.params.id } });
+    const employeeId = req.params.id;
+    // Remove related movements first (ignore if none)
+    await prisma.movement.deleteMany({ where: { employee_id: employeeId } });
+    // Then delete the employee
+    await prisma.employee.delete({ where: { id: employeeId } });
     res.json({ ok: true });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) {
+    // Prisma throws a known error with code 'P2025' when record not found
+    if (e?.code === 'P2025') {
+      res.status(404).json({ error: 'Funcionário não encontrado.' });
+    } else {
+      res.status(500).json({ error: e.message || 'Erro ao excluir funcionário.' });
+    }
+  }
 });
 
 // ─── Tools ───────────────────────────────────────────────────────────────────
@@ -76,7 +93,13 @@ app.get('/api/tools', async (_req, res) => {
       totalQuantity: r.total_quantity, availableQuantity: r.available_quantity,
       description: r.description, shift: r.shift, createdAt: r.created_at.toISOString(),
     })));
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) {
+    if (e?.code === 'P2025') {
+      res.status(404).json({ error: 'Ferramenta não encontrada.' });
+    } else {
+      res.status(500).json({ error: e.message });
+    }
+  }
 });
 
 app.post('/api/tools', async (req, res) => {
@@ -97,14 +120,31 @@ app.patch('/api/tools/:id', async (req, res) => {
       data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description },
     });
     res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, shift: row.shift, createdAt: row.created_at.toISOString() });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) {
+    if (e?.code === 'P2025') {
+      res.status(404).json({ error: 'Ferramenta não encontrada.' });
+    } else {
+      res.status(500).json({ error: e.message });
+    }
+  }
 });
 
 app.delete('/api/tools/:id', async (req, res) => {
   try {
-    await prisma.tool.delete({ where: { id: req.params.id } });
+    const toolId = req.params.id;
+    // First delete all movements that reference this tool to satisfy FK constraints
+    await prisma.movement.deleteMany({ where: { tool_id: toolId } });
+    // Then delete the tool itself
+    await prisma.tool.delete({ where: { id: toolId } });
     res.json({ ok: true });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+  } catch (e: any) {
+    // If the tool does not exist, return a 404
+    if (e.code === 'P2025') {
+      res.status(404).json({ error: 'Ferramenta não encontrada.' });
+    } else {
+      res.status(500).json({ error: e.message });
+    }
+  }
 });
 
 // ─── Movements ───────────────────────────────────────────────────────────────
@@ -137,6 +177,16 @@ app.get('/api/movements', async (req, res) => {
 app.post('/api/movements', async (req, res) => {
   try {
     const items: any[] = Array.isArray(req.body) ? req.body : [req.body];
+    // Validate each movement against tool availability
+    for (const m of items) {
+      const tool = await prisma.tool.findUnique({ where: { id: m.toolId } });
+      if (!tool) {
+        return res.status(400).json({ error: `Ferramenta ${m.toolId} não encontrada.` });
+      }
+      if (tool.available_quantity < m.quantity) {
+        return res.status(400).json({ error: `Quantidade indisponível para ferramenta ${tool.name}. Disponível: ${tool.available_quantity}` });
+      }
+    }
     const created = await prisma.$transaction(
       items.map(m => prisma.movement.create({
         data: {
@@ -164,9 +214,14 @@ app.post('/api/movements', async (req, res) => {
       )
     );
     res.json(created.map(r => ({
-      id: r.id, employeeId: r.employee_id, toolId: r.tool_id,
-      quantity: r.quantity, signature: r.signature, shift: r.shift,
-      date: r.date.toISOString(), status: r.status,
+      id: r.id,
+      employeeId: r.employee_id,
+      toolId: r.tool_id,
+      quantity: r.quantity,
+      signature: r.signature,
+      shift: r.shift,
+      date: r.date.toISOString(),
+      status: r.status,
     })));
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

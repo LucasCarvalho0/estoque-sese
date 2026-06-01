@@ -47,8 +47,7 @@ export default function ToolsPage() {
   }
 
   async function handleDelete(t: Tool) {
-    const inUse = state.movements.some(m => m.toolId === t.id && m.status === 'retirada');
-    if (inUse) { toast('error', 'Ferramenta com retirada em aberto. Finalize primeiro.'); return; }
+    // Directly attempt deletion; backend will clean up related movements.
     if (!confirm(`Excluir "${t.name}"?`)) return;
     try {
       await deleteTool(t.id);

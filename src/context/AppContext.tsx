@@ -281,11 +281,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteEmployee = useCallback(async (id: string) => {
-    await db.deleteEmployee(id);
+      try {
+        await db.deleteEmployee(id);
+      } catch (err: any) {
+        // Ignore errors (e.g., record already missing)
+      }
     setState(s => {
       const employees = s.employees.filter(e => e.id !== id);
+      const movements = s.movements.filter(m => m.employeeId !== id);
       saveCache(s.currentShift || '', employees, s.tools);
-      return { ...s, employees };
+      return { ...s, employees, movements };
     });
   }, []);
 
@@ -321,29 +326,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteTool = useCallback(async (id: string) => {
-    await db.deleteTool(id);
+      try {
+        await db.deleteTool(id);
+      } catch (err: any) {
+        // Ignore errors (e.g., tool already missing)
+      }
     setState(s => {
       const tools = s.tools.filter(t => t.id !== id);
+      const movements = s.movements.filter(m => m.toolId !== id);
       saveCache(s.currentShift || '', s.employees, tools);
-      return { ...s, tools };
+      return { ...s, tools, movements };
     });
   }, []);
 
+
   // ─── Movements ─────────────────────────────────────────────────────────────
   const addMovement = useCallback(async (data: Omit<Movement, 'id' | 'date'> & { date?: string }) => {
-    const mov: Omit<Movement, 'id'> = { ...data, date: data.date || new Date().toISOString() };
-    const saved = await db.insertMovement(mov);
-    // Decrement available quantity in DB
-    await db.updateToolAvailability(data.toolId, -data.quantity);
-    setState(s => ({
-      ...s,
-      movements: [saved, ...s.movements],
-      tools: s.tools.map(t =>
-        t.id === data.toolId
-          ? { ...t, availableQuantity: Math.max(0, t.availableQuantity - data.quantity) }
-          : t
-      ),
-    }));
+    try {
+      const mov: Omit<Movement, 'id'> = { ...data, date: data.date || new Date().toISOString() };
+      const saved = await db.insertMovement(mov);
+      // Decrement available quantity in DB
+      await db.updateToolAvailability(data.toolId, -data.quantity);
+      setState(s => ({
+        ...s,
+        movements: [saved, ...s.movements],
+        tools: s.tools.map(t =>
+          t.id === data.toolId
+            ? { ...t, availableQuantity: Math.max(0, t.availableQuantity - data.quantity) }
+            : t
+        ),
+      }));
+    } catch (err: any) {
+      toast('error', err.message ?? 'Erro ao registrar retirada.');
+      throw err;
+    }
   }, []);
 
   const addMovements = useCallback(async (movementsData: (Omit<Movement, 'id' | 'date'> & { date?: string })[]) => {

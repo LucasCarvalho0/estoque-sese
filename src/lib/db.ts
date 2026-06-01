@@ -40,7 +40,13 @@ export async function updateEmployee(emp: Employee): Promise<void> {
 }
 
 export async function deleteEmployee(id: string): Promise<void> {
-  await api(`/employees/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${API}/employees/${id}`, { method: 'DELETE' });
+  if (res.status === 404) {
+    // Record already missing; treat as success
+    return;
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
 }
 
 // ─── Tools ───────────────────────────────────────────────────────────────────
@@ -69,7 +75,13 @@ export async function updateTool(tool: Tool): Promise<void> {
 }
 
 export async function deleteTool(id: string): Promise<void> {
-  await api(`/tools/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${API}/tools/${id}`, { method: 'DELETE' });
+  if (res.status === 404) {
+    // Tool already missing; treat as success
+    return;
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
 }
 
 // ─── Movements ───────────────────────────────────────────────────────────────
