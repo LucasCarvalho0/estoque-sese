@@ -91,7 +91,7 @@ app.get('/api/tools', async (_req, res) => {
     res.json(rows.map(r => ({
       id: r.id, name: r.name, code: r.code,
       totalQuantity: r.total_quantity, availableQuantity: r.available_quantity,
-      description: r.description, shift: r.shift, createdAt: r.created_at.toISOString(),
+      description: r.description, category: r.category, shift: r.shift, createdAt: r.created_at.toISOString(),
     })));
   } catch (e: any) {
     if (e?.code === 'P2025') {
@@ -104,22 +104,22 @@ app.get('/api/tools', async (_req, res) => {
 
 app.post('/api/tools', async (req, res) => {
   try {
-    const { name, code, totalQuantity, availableQuantity, description, shift } = req.body;
+    const { name, code, totalQuantity, availableQuantity, description, category, shift } = req.body;
     const row = await prisma.tool.create({
-      data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description: description ?? '', shift },
+      data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description: description ?? '', category: category ?? 'ferramenta', shift },
     });
-    res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, shift: row.shift, createdAt: row.created_at.toISOString() });
+    res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, category: row.category, shift: row.shift, createdAt: row.created_at.toISOString() });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.patch('/api/tools/:id', async (req, res) => {
   try {
-    const { name, code, totalQuantity, availableQuantity, description } = req.body;
+    const { name, code, totalQuantity, availableQuantity, description, category } = req.body;
     const row = await prisma.tool.update({
       where: { id: req.params.id },
-      data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description },
+      data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description, category },
     });
-    res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, shift: row.shift, createdAt: row.created_at.toISOString() });
+    res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, category: row.category, shift: row.shift, createdAt: row.created_at.toISOString() });
   } catch (e: any) {
     if (e?.code === 'P2025') {
       res.status(404).json({ error: 'Ferramenta não encontrada.' });

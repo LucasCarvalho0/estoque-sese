@@ -2408,6 +2408,7 @@ export namespace Prisma {
     total_quantity: number | null
     available_quantity: number | null
     description: string | null
+    category: string | null
     shift: string | null
     created_at: Date | null
   }
@@ -2419,6 +2420,7 @@ export namespace Prisma {
     total_quantity: number | null
     available_quantity: number | null
     description: string | null
+    category: string | null
     shift: string | null
     created_at: Date | null
   }
@@ -2430,6 +2432,7 @@ export namespace Prisma {
     total_quantity: number
     available_quantity: number
     description: number
+    category: number
     shift: number
     created_at: number
     _all: number
@@ -2453,6 +2456,7 @@ export namespace Prisma {
     total_quantity?: true
     available_quantity?: true
     description?: true
+    category?: true
     shift?: true
     created_at?: true
   }
@@ -2464,6 +2468,7 @@ export namespace Prisma {
     total_quantity?: true
     available_quantity?: true
     description?: true
+    category?: true
     shift?: true
     created_at?: true
   }
@@ -2475,6 +2480,7 @@ export namespace Prisma {
     total_quantity?: true
     available_quantity?: true
     description?: true
+    category?: true
     shift?: true
     created_at?: true
     _all?: true
@@ -2573,6 +2579,7 @@ export namespace Prisma {
     total_quantity: number
     available_quantity: number
     description: string
+    category: string
     shift: string
     created_at: Date
     _count: ToolCountAggregateOutputType | null
@@ -2603,6 +2610,7 @@ export namespace Prisma {
     total_quantity?: boolean
     available_quantity?: boolean
     description?: boolean
+    category?: boolean
     shift?: boolean
     created_at?: boolean
     movements?: boolean | Tool$movementsArgs<ExtArgs>
@@ -2616,6 +2624,7 @@ export namespace Prisma {
     total_quantity?: boolean
     available_quantity?: boolean
     description?: boolean
+    category?: boolean
     shift?: boolean
     created_at?: boolean
   }, ExtArgs["result"]["tool"]>
@@ -2627,6 +2636,7 @@ export namespace Prisma {
     total_quantity?: boolean
     available_quantity?: boolean
     description?: boolean
+    category?: boolean
     shift?: boolean
     created_at?: boolean
   }, ExtArgs["result"]["tool"]>
@@ -2638,11 +2648,12 @@ export namespace Prisma {
     total_quantity?: boolean
     available_quantity?: boolean
     description?: boolean
+    category?: boolean
     shift?: boolean
     created_at?: boolean
   }
 
-  export type ToolOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "code" | "total_quantity" | "available_quantity" | "description" | "shift" | "created_at", ExtArgs["result"]["tool"]>
+  export type ToolOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "code" | "total_quantity" | "available_quantity" | "description" | "category" | "shift" | "created_at", ExtArgs["result"]["tool"]>
   export type ToolInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     movements?: boolean | Tool$movementsArgs<ExtArgs>
     _count?: boolean | ToolCountOutputTypeDefaultArgs<ExtArgs>
@@ -2662,6 +2673,7 @@ export namespace Prisma {
       total_quantity: number
       available_quantity: number
       description: string
+      category: string
       shift: string
       created_at: Date
     }, ExtArgs["result"]["tool"]>
@@ -3094,6 +3106,7 @@ export namespace Prisma {
     readonly total_quantity: FieldRef<"Tool", 'Int'>
     readonly available_quantity: FieldRef<"Tool", 'Int'>
     readonly description: FieldRef<"Tool", 'String'>
+    readonly category: FieldRef<"Tool", 'String'>
     readonly shift: FieldRef<"Tool", 'String'>
     readonly created_at: FieldRef<"Tool", 'DateTime'>
   }
@@ -6799,6 +6812,7 @@ export namespace Prisma {
     total_quantity: 'total_quantity',
     available_quantity: 'available_quantity',
     description: 'description',
+    category: 'category',
     shift: 'shift',
     created_at: 'created_at'
   };
@@ -7044,6 +7058,7 @@ export namespace Prisma {
     total_quantity?: IntFilter<"Tool"> | number
     available_quantity?: IntFilter<"Tool"> | number
     description?: StringFilter<"Tool"> | string
+    category?: StringFilter<"Tool"> | string
     shift?: StringFilter<"Tool"> | string
     created_at?: DateTimeFilter<"Tool"> | Date | string
     movements?: MovementListRelationFilter
@@ -7056,6 +7071,7 @@ export namespace Prisma {
     total_quantity?: SortOrder
     available_quantity?: SortOrder
     description?: SortOrder
+    category?: SortOrder
     shift?: SortOrder
     created_at?: SortOrder
     movements?: MovementOrderByRelationAggregateInput
@@ -7071,6 +7087,7 @@ export namespace Prisma {
     total_quantity?: IntFilter<"Tool"> | number
     available_quantity?: IntFilter<"Tool"> | number
     description?: StringFilter<"Tool"> | string
+    category?: StringFilter<"Tool"> | string
     shift?: StringFilter<"Tool"> | string
     created_at?: DateTimeFilter<"Tool"> | Date | string
     movements?: MovementListRelationFilter
@@ -7083,6 +7100,7 @@ export namespace Prisma {
     total_quantity?: SortOrder
     available_quantity?: SortOrder
     description?: SortOrder
+    category?: SortOrder
     shift?: SortOrder
     created_at?: SortOrder
     _count?: ToolCountOrderByAggregateInput
@@ -7102,6 +7120,7 @@ export namespace Prisma {
     total_quantity?: IntWithAggregatesFilter<"Tool"> | number
     available_quantity?: IntWithAggregatesFilter<"Tool"> | number
     description?: StringWithAggregatesFilter<"Tool"> | string
+    category?: StringWithAggregatesFilter<"Tool"> | string
     shift?: StringWithAggregatesFilter<"Tool"> | string
     created_at?: DateTimeWithAggregatesFilter<"Tool"> | Date | string
   }
@@ -7394,6 +7413,7 @@ export namespace Prisma {
     total_quantity: number
     available_quantity: number
     description?: string
+    category?: string
     shift: string
     created_at?: Date | string
     movements?: MovementCreateNestedManyWithoutToolInput
@@ -7406,6 +7426,7 @@ export namespace Prisma {
     total_quantity: number
     available_quantity: number
     description?: string
+    category?: string
     shift: string
     created_at?: Date | string
     movements?: MovementUncheckedCreateNestedManyWithoutToolInput
@@ -7418,6 +7439,7 @@ export namespace Prisma {
     total_quantity?: IntFieldUpdateOperationsInput | number
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     movements?: MovementUpdateManyWithoutToolNestedInput
@@ -7430,6 +7452,7 @@ export namespace Prisma {
     total_quantity?: IntFieldUpdateOperationsInput | number
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     movements?: MovementUncheckedUpdateManyWithoutToolNestedInput
@@ -7442,6 +7465,7 @@ export namespace Prisma {
     total_quantity: number
     available_quantity: number
     description?: string
+    category?: string
     shift: string
     created_at?: Date | string
   }
@@ -7453,6 +7477,7 @@ export namespace Prisma {
     total_quantity?: IntFieldUpdateOperationsInput | number
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -7464,6 +7489,7 @@ export namespace Prisma {
     total_quantity?: IntFieldUpdateOperationsInput | number
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -7830,6 +7856,7 @@ export namespace Prisma {
     total_quantity?: SortOrder
     available_quantity?: SortOrder
     description?: SortOrder
+    category?: SortOrder
     shift?: SortOrder
     created_at?: SortOrder
   }
@@ -7846,6 +7873,7 @@ export namespace Prisma {
     total_quantity?: SortOrder
     available_quantity?: SortOrder
     description?: SortOrder
+    category?: SortOrder
     shift?: SortOrder
     created_at?: SortOrder
   }
@@ -7857,6 +7885,7 @@ export namespace Prisma {
     total_quantity?: SortOrder
     available_quantity?: SortOrder
     description?: SortOrder
+    category?: SortOrder
     shift?: SortOrder
     created_at?: SortOrder
   }
@@ -8669,6 +8698,7 @@ export namespace Prisma {
     total_quantity: number
     available_quantity: number
     description?: string
+    category?: string
     shift: string
     created_at?: Date | string
   }
@@ -8680,6 +8710,7 @@ export namespace Prisma {
     total_quantity: number
     available_quantity: number
     description?: string
+    category?: string
     shift: string
     created_at?: Date | string
   }
@@ -8736,6 +8767,7 @@ export namespace Prisma {
     total_quantity?: IntFieldUpdateOperationsInput | number
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8747,6 +8779,7 @@ export namespace Prisma {
     total_quantity?: IntFieldUpdateOperationsInput | number
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
+    category?: StringFieldUpdateOperationsInput | string
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }

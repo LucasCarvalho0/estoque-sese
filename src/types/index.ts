@@ -25,6 +25,7 @@ export interface Tool {
   totalQuantity: number;
   availableQuantity: number;
   description: string;
+  category: 'ferramenta' | 'pendrive';
   shift: ShiftId;
   createdAt: string;
 }

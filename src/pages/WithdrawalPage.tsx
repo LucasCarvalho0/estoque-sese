@@ -17,11 +17,15 @@ export default function WithdrawalPage() {
   const [selectedToolId, setSelectedToolId] = useState('');
   const [selectedQty, setSelectedQty] = useState(1);
   const [signature, setSignature] = useState('');
+  const [selectedPendriveKitId, setSelectedPendriveKitId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const activeEmployees = state.employees.filter(e => e.active);
   const cartToolIds = cart.map(c => c.toolId);
-  const availableTools = state.tools.filter(t => t.availableQuantity > 0 && !cartToolIds.includes(t.id));
+  
+  const availableTools = state.tools.filter(t => t.availableQuantity > 0 && !cartToolIds.includes(t.id) && t.category !== 'pendrive');
+  const availablePendrives = state.tools.filter(t => t.category === 'pendrive' && t.availableQuantity > 0);
+  
   const selectedTool = state.tools.find(t => t.id === selectedToolId);
 
   function addToCart() {
@@ -51,7 +55,13 @@ export default function WithdrawalPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!employeeId) { toast('error', 'Selecione um funcionário.'); return; }
-    if (cart.length === 0) { toast('error', 'Adicione pelo menos uma ferramenta.'); return; }
+    
+    if (availablePendrives.length > 0 && !selectedPendriveKitId) {
+      toast('error', 'A seleção do Kit de Pen-Drive é obrigatória.'); 
+      return;
+    }
+    
+    if (cart.length === 0 && !selectedPendriveKitId) { toast('error', 'Adicione pelo menos uma ferramenta ou kit.'); return; }
     if (!signature.trim() || signature.length < 100) { 
       toast('error', 'A assinatura do funcionário é obrigatória para finalizar.'); 
       return; 
@@ -60,7 +70,7 @@ export default function WithdrawalPage() {
     setSubmitting(true);
     try {
       const batchDate = new Date().toISOString();
-      await addMovements(cart.map(item => ({
+      const batchData: any[] = cart.map(item => ({
         employeeId,
         toolId: item.toolId,
         quantity: item.quantity,
@@ -68,11 +78,26 @@ export default function WithdrawalPage() {
         shift: state.currentShift!,
         status: 'retirada',
         date: batchDate,
-      })));
-      toast('success', `${cart.length} retirada(s) registrada(s) com sucesso!`);
+      }));
+
+      if (selectedPendriveKitId) {
+        batchData.push({
+          employeeId,
+          toolId: selectedPendriveKitId,
+          quantity: 1,
+          signature,
+          shift: state.currentShift!,
+          status: 'retirada',
+          date: batchDate,
+        });
+      }
+
+      await addMovements(batchData);
+      toast('success', `${batchData.length} retirada(s) registrada(s) com sucesso!`);
       setEmployeeId('');
       setCart([]);
       setSignature('');
+      setSelectedPendriveKitId('');
     } catch (err: any) {
       console.error('Erro no salvamento (Turno/Dados):', err);
       toast('error', err.message ?? 'Erro ao registrar retirada.');
@@ -213,6 +238,30 @@ export default function WithdrawalPage() {
             </div>
           )}
 
+          {/* Pendrive Update Section */}
+          <div className="card p-5 lg:p-6 bg-dark-800 border-none ring-1 ring-purple-500/20">
+            <label className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-3 block flex items-center gap-2">
+              <Package size={12} /> Kit de Pen-Drive (Obrigatório)
+            </label>
+            
+            {availablePendrives.length === 0 ? (
+               <p className="text-sm text-slate-400 italic">Nenhum kit de pen-drive disponível no estoque.</p>
+            ) : (
+              <select 
+                className="input-field py-4 text-sm font-bold bg-dark-900 border-purple-500/30 focus:border-purple-500/50 focus:ring-purple-500/20" 
+                value={selectedPendriveKitId} 
+                onChange={e => setSelectedPendriveKitId(e.target.value)}
+              >
+                <option value="">Selecione o kit a ser utilizado...</option>
+                {availablePendrives.map(kit => (
+                  <option key={kit.id} value={kit.id}>
+                    {kit.name} — {kit.availableQuantity} Disp.
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           {/* Signature Section */}
           <div className={`card p-5 lg:p-6 bg-dark-800 border-none transition-all ${!signature ? 'ring-1 ring-red-500/20' : 'ring-1 ring-emerald-500/20'}`}>
             <SignatureInput 
@@ -226,7 +275,7 @@ export default function WithdrawalPage() {
           <button
             type="submit"
             className="btn-primary w-full h-16 text-lg shadow-xl shadow-gold-500/20 active:scale-95 transition-transform"
-            disabled={submitting || cart.length === 0}
+            disabled={submitting || (cart.length === 0 && !selectedPendriveKitId)}
           >
             {submitting ? <Loader2 size={24} className="animate-spin" /> : <ArrowUpFromLine size={24} />}
             <span className="font-black uppercase tracking-widest">{submitting ? 'PROCESSANDO...' : 'FINALIZAR RETIRADA'}</span>

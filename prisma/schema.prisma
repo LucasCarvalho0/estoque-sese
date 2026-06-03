@@ -27,6 +27,7 @@ model Tool {
   total_quantity     Int
   available_quantity Int
   description        String   @default("")
+  category           String   @default("ferramenta")
   shift              String
   created_at         DateTime @default(now())
 

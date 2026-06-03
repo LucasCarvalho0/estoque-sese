@@ -136,6 +136,7 @@ exports.Prisma.ToolScalarFieldEnum = {
   total_quantity: 'total_quantity',
   available_quantity: 'available_quantity',
   description: 'description',
+  category: 'category',
   shift: 'shift',
   created_at: 'created_at'
 };

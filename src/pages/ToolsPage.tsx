@@ -5,8 +5,8 @@ import { Modal } from '../components/Modal';
 import { EmptyState } from '../components/EmptyState';
 import { Tool } from '../types';
 
-interface Form { name: string; code: string; totalQuantity: number; description: string; }
-const EMPTY: Form = { name: '', code: '', totalQuantity: 1, description: '' };
+interface Form { name: string; code: string; totalQuantity: number; description: string; category: 'ferramenta' | 'pendrive'; }
+const EMPTY: Form = { name: '', code: '', totalQuantity: 1, description: '', category: 'ferramenta' };
 
 export default function ToolsPage() {
   const { state, addTool, updateTool, deleteTool, toast } = useApp();
@@ -22,7 +22,7 @@ export default function ToolsPage() {
   );
 
   function openAdd() { setEditing(null); setForm(EMPTY); setModal(true); }
-  function openEdit(t: Tool) { setEditing(t); setForm({ name: t.name, code: t.code, totalQuantity: t.totalQuantity, description: t.description }); setModal(true); }
+  function openEdit(t: Tool) { setEditing(t); setForm({ name: t.name, code: t.code, totalQuantity: t.totalQuantity, description: t.description, category: t.category }); setModal(true); }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +82,14 @@ export default function ToolsPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-100 truncate">{tool.name}</p>
-                    <p className="text-xs text-slate-500 font-mono">{tool.code}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-slate-500 font-mono">{tool.code}</p>
+                      {tool.category === 'pendrive' && (
+                        <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest bg-purple-500/20 text-purple-400">
+                          Kit Pendrive
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-1.5 shrink-0">
@@ -127,6 +134,19 @@ export default function ToolsPage() {
           <div>
             <label className="label">Descrição (opcional)</label>
             <textarea className="input-field resize-none" rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Detalhes adicionais..." />
+          </div>
+          <div>
+            <label className="label">Categoria</label>
+            <div className="flex gap-4 mt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="category" value="ferramenta" checked={form.category === 'ferramenta'} onChange={() => setForm(f => ({ ...f, category: 'ferramenta' }))} className="text-gold-500 bg-dark-900 border-dark-700 focus:ring-gold-500/20" />
+                <span className="text-sm font-medium text-slate-300">Ferramenta</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="category" value="pendrive" checked={form.category === 'pendrive'} onChange={() => setForm(f => ({ ...f, category: 'pendrive' }))} className="text-gold-500 bg-dark-900 border-dark-700 focus:ring-gold-500/20" />
+                <span className="text-sm font-medium text-slate-300">Kit de Pendrive</span>
+              </label>
+            </div>
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" className="btn-secondary flex-1" onClick={() => setModal(false)}>Cancelar</button>

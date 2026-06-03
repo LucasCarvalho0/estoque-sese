@@ -70,6 +70,7 @@ export async function updateTool(tool: Tool): Promise<void> {
       totalQuantity: tool.totalQuantity,
       availableQuantity: tool.availableQuantity,
       description: tool.description,
+      category: tool.category,
     }),
   });
 }
