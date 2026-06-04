@@ -31,7 +31,15 @@ export default function ReturnPage() {
     if (!emp) return '—';
     return emp.matricula ? `${emp.name} (Mat. ${emp.matricula})` : emp.name;
   }
-  function getToolName(id: string) { return state.tools.find(t => t.id === id)?.name ?? '—'; }
+  function getToolDisplayName(m: Movement) {
+    const t = state.tools.find(x => x.id === m.toolId);
+    if (!t) return '—';
+    if (m.toolLotId && t.lots) {
+      const lot = t.lots.find(l => l.id === m.toolLotId);
+      if (lot) return `${t.name} — ${lot.name} (Série: ${lot.serial})`;
+    }
+    return t.name;
+  }
   function getToolCode(id: string) { return state.tools.find(t => t.id === id)?.code ?? '—'; }
 
   // Group all pending retiradas by (employeeId + signature)
@@ -58,7 +66,7 @@ export default function ReturnPage() {
     const q = search.toLowerCase();
     return (
       getEmployeeLabel(b.employeeId).toLowerCase().includes(q) ||
-      b.movements.some(m => getToolName(m.toolId).toLowerCase().includes(q) || getToolCode(m.toolId).toLowerCase().includes(q))
+      b.movements.some(m => getToolDisplayName(m).toLowerCase().includes(q) || getToolCode(m.toolId).toLowerCase().includes(q))
     );
   });
 
@@ -138,7 +146,7 @@ export default function ReturnPage() {
                     <div key={m.id} className={`rounded-2xl border-2 transition-all p-4 lg:p-5 space-y-4 ${hasFault ? 'border-red-500/30 bg-red-500/5 shadow-lg shadow-red-900/5' : 'border-dark-700 bg-dark-900 group-hover:border-dark-600'}`}>
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm lg:text-base font-black text-slate-100 mb-1">{getToolName(m.toolId)}</p>
+                          <p className="text-sm lg:text-base font-black text-slate-100 mb-1">{getToolDisplayName(m)}</p>
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-mono text-slate-500 bg-dark-700 px-1.5 py-0.5 rounded">{getToolCode(m.toolId)}</span>
                             <span className="text-xs text-slate-400 font-medium">Retirou: <span className="text-slate-200 font-bold">{m.quantity}</span></span>
@@ -261,7 +269,7 @@ export default function ReturnPage() {
                      <div className="flex flex-wrap gap-2 mt-1.5">
                        {batch.movements.slice(0, 3).map(m => (
                          <span key={m.id} className="text-[10px] bg-dark-800 px-2 py-0.5 rounded border border-dark-700 text-slate-400">
-                           {getToolName(m.toolId)}
+                           {getToolDisplayName(m)}
                          </span>
                        ))}
                        {batch.movements.length > 3 && (

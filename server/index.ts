@@ -91,7 +91,7 @@ app.get('/api/tools', async (_req, res) => {
     res.json(rows.map(r => ({
       id: r.id, name: r.name, code: r.code,
       totalQuantity: r.total_quantity, availableQuantity: r.available_quantity,
-      description: r.description, category: r.category, shift: r.shift, createdAt: r.created_at.toISOString(),
+      description: r.description, category: r.category, lots: r.lots, shift: r.shift, createdAt: r.created_at.toISOString(),
     })));
   } catch (e: any) {
     if (e?.code === 'P2025') {
@@ -104,22 +104,22 @@ app.get('/api/tools', async (_req, res) => {
 
 app.post('/api/tools', async (req, res) => {
   try {
-    const { name, code, totalQuantity, availableQuantity, description, category, shift } = req.body;
+    const { name, code, totalQuantity, availableQuantity, description, category, lots, shift } = req.body;
     const row = await prisma.tool.create({
-      data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description: description ?? '', category: category ?? 'ferramenta', shift },
+      data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description: description ?? '', category: category ?? 'ferramenta', lots: lots ?? null, shift },
     });
-    res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, category: row.category, shift: row.shift, createdAt: row.created_at.toISOString() });
+    res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, category: row.category, lots: row.lots, shift: row.shift, createdAt: row.created_at.toISOString() });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
 
 app.patch('/api/tools/:id', async (req, res) => {
   try {
-    const { name, code, totalQuantity, availableQuantity, description, category } = req.body;
+    const { name, code, totalQuantity, availableQuantity, description, category, lots } = req.body;
     const row = await prisma.tool.update({
       where: { id: req.params.id },
-      data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description, category },
+      data: { name, code, total_quantity: totalQuantity, available_quantity: availableQuantity, description, category, lots: lots ?? null },
     });
-    res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, category: row.category, shift: row.shift, createdAt: row.created_at.toISOString() });
+    res.json({ id: row.id, name: row.name, code: row.code, totalQuantity: row.total_quantity, availableQuantity: row.available_quantity, description: row.description, category: row.category, lots: row.lots, shift: row.shift, createdAt: row.created_at.toISOString() });
   } catch (e: any) {
     if (e?.code === 'P2025') {
       res.status(404).json({ error: 'Ferramenta não encontrada.' });
@@ -170,6 +170,7 @@ app.get('/api/movements', async (req, res) => {
       returnSignature: r.return_signature ?? undefined,
       returnDate: r.return_date?.toISOString() ?? undefined,
       observation: r.observation ?? undefined,
+      toolLotId: r.tool_lot_id ?? undefined,
     })));
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -197,22 +198,35 @@ app.post('/api/movements', async (req, res) => {
           shift: m.shift,
           date: new Date(m.date || new Date()),
           status: m.status ?? 'retirada',
+          tool_lot_id: m.toolLotId ?? null,
         },
       }))
     );
-    // Update tool availability
-    const toolQtyMap = new Map<string, number>();
+    // Update tool availability and lots
+    const toolUpdates = new Map<string, { qty: number, lotsToUpdate: string[] }>();
     items.forEach(m => {
-      toolQtyMap.set(m.toolId, (toolQtyMap.get(m.toolId) ?? 0) + m.quantity);
+      const current = toolUpdates.get(m.toolId) ?? { qty: 0, lotsToUpdate: [] };
+      current.qty += m.quantity;
+      if (m.toolLotId) current.lotsToUpdate.push(m.toolLotId);
+      toolUpdates.set(m.toolId, current);
     });
-    await prisma.$transaction(
-      Array.from(toolQtyMap.entries()).map(([toolId, qty]) =>
-        prisma.tool.update({
-          where: { id: toolId },
-          data: { available_quantity: { decrement: qty } },
-        })
-      )
-    );
+    
+    for (const [toolId, update] of toolUpdates.entries()) {
+      const tool = await prisma.tool.findUnique({ where: { id: toolId } });
+      let newLots = tool?.lots;
+      if (newLots && Array.isArray(newLots) && update.lotsToUpdate.length > 0) {
+        newLots = newLots.map((lot: any) => 
+          update.lotsToUpdate.includes(lot.id) ? { ...lot, status: 'em_uso' } : lot
+        );
+      }
+      await prisma.tool.update({
+        where: { id: toolId },
+        data: { 
+          available_quantity: { decrement: update.qty },
+          ...(newLots ? { lots: newLots } : {})
+        },
+      });
+    }
     res.json(created.map(r => ({
       id: r.id,
       employeeId: r.employee_id,
@@ -239,6 +253,17 @@ app.patch('/api/movements/:id', async (req, res) => {
         observation: observation ?? null,
       },
     });
+    
+    if (status === 'devolvido' && row.tool_lot_id) {
+       const tool = await prisma.tool.findUnique({ where: { id: row.tool_id }});
+       if (tool?.lots && Array.isArray(tool.lots)) {
+         const newLots = tool.lots.map((lot: any) => 
+            lot.id === row.tool_lot_id ? { ...lot, status: 'disponivel' } : lot
+         );
+         await prisma.tool.update({ where: { id: tool.id }, data: { lots: newLots } });
+       }
+    }
+    
     res.json({ id: row.id, status: row.status });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });
@@ -246,7 +271,7 @@ app.patch('/api/movements/:id', async (req, res) => {
 // Bulk return
 app.post('/api/movements/bulk-return', async (req, res) => {
   try {
-    const returns: { id: string; qty: number; sig: string; obs?: string; toolId: string; movQty: number }[] = req.body;
+    const returns: { id: string; qty: number; sig: string; obs?: string; toolId: string; movQty: number; toolLotId?: string }[] = req.body;
     const returnDate = new Date();
     await prisma.$transaction(
       returns.map(r => {
@@ -263,19 +288,33 @@ app.post('/api/movements/bulk-return', async (req, res) => {
         });
       })
     );
-    // Update tool availability
-    const toolQtyMap = new Map<string, number>();
+    // Update tool availability and lots
+    const toolUpdates = new Map<string, { qty: number, lotsToUpdate: string[] }>();
     returns.forEach(r => {
-      toolQtyMap.set(r.toolId, (toolQtyMap.get(r.toolId) ?? 0) + r.qty);
+      const current = toolUpdates.get(r.toolId) ?? { qty: 0, lotsToUpdate: [] };
+      current.qty += r.qty;
+      if (r.qty >= r.movQty && r.toolLotId) {
+        current.lotsToUpdate.push(r.toolLotId);
+      }
+      toolUpdates.set(r.toolId, current);
     });
-    await prisma.$transaction(
-      Array.from(toolQtyMap.entries()).map(([toolId, qty]) =>
-        prisma.tool.update({
-          where: { id: toolId },
-          data: { available_quantity: { increment: qty } },
-        })
-      )
-    );
+    
+    for (const [toolId, update] of toolUpdates.entries()) {
+      const tool = await prisma.tool.findUnique({ where: { id: toolId } });
+      let newLots = tool?.lots;
+      if (newLots && Array.isArray(newLots) && update.lotsToUpdate.length > 0) {
+        newLots = newLots.map((lot: any) => 
+          update.lotsToUpdate.includes(lot.id) ? { ...lot, status: 'disponivel' } : lot
+        );
+      }
+      await prisma.tool.update({
+        where: { id: toolId },
+        data: { 
+          available_quantity: { increment: update.qty },
+          ...(newLots ? { lots: newLots } : {})
+        },
+      });
+    }
     res.json({ ok: true });
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 });

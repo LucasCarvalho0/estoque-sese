@@ -3,10 +3,10 @@ import { Plus, Search, Pencil, Trash2, Wrench, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Modal } from '../components/Modal';
 import { EmptyState } from '../components/EmptyState';
-import { Tool } from '../types';
+import { Tool, ToolLot } from '../types';
 
-interface Form { name: string; code: string; totalQuantity: number; description: string; category: 'ferramenta' | 'pendrive'; }
-const EMPTY: Form = { name: '', code: '', totalQuantity: 1, description: '', category: 'ferramenta' };
+interface Form { name: string; code: string; totalQuantity: number; description: string; category: 'ferramenta' | 'pendrive'; lots: ToolLot[]; }
+const EMPTY: Form = { name: '', code: '', totalQuantity: 1, description: '', category: 'ferramenta', lots: [] };
 
 export default function ToolsPage() {
   const { state, addTool, updateTool, deleteTool, toast } = useApp();
@@ -22,7 +22,20 @@ export default function ToolsPage() {
   );
 
   function openAdd() { setEditing(null); setForm(EMPTY); setModal(true); }
-  function openEdit(t: Tool) { setEditing(t); setForm({ name: t.name, code: t.code, totalQuantity: t.totalQuantity, description: t.description, category: t.category }); setModal(true); }
+  function openEdit(t: Tool) { setEditing(t); setForm({ name: t.name, code: t.code, totalQuantity: t.totalQuantity, description: t.description, category: t.category, lots: t.lots || [] }); setModal(true); }
+
+  function addLot() {
+    const id = Math.random().toString(36).substring(2, 9);
+    setForm(f => ({ ...f, lots: [...f.lots, { id, name: `Lote ${f.lots.length + 1}`, serial: '', status: 'disponivel' }] }));
+  }
+  
+  function updateLot(id: string, field: 'name' | 'serial', value: string) {
+    setForm(f => ({ ...f, lots: f.lots.map(l => l.id === id ? { ...l, [field]: value } : l) }));
+  }
+  
+  function removeLot(id: string) {
+    setForm(f => ({ ...f, lots: f.lots.filter(l => l.id !== id) }));
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -30,12 +43,21 @@ export default function ToolsPage() {
     if (!form.code.trim()) { toast('error', 'Código é obrigatório.'); return; }
     setSaving(true);
     try {
+      let newTotal = form.category === 'pendrive' ? form.lots.length : form.totalQuantity;
+      if (form.category === 'pendrive' && newTotal === 0) { toast('error', 'Adicione pelo menos um lote ao kit.'); setSaving(false); return; }
+
       if (editing) {
-        const diff = form.totalQuantity - editing.totalQuantity;
-        await updateTool({ ...editing, ...form, availableQuantity: Math.max(0, editing.availableQuantity + diff) });
+        let newAvailable = editing.availableQuantity;
+        if (form.category === 'pendrive') {
+          newAvailable = form.lots.filter(l => l.status === 'disponivel').length;
+        } else {
+          const diff = newTotal - editing.totalQuantity;
+          newAvailable = Math.max(0, editing.availableQuantity + diff);
+        }
+        await updateTool({ ...editing, ...form, totalQuantity: newTotal, availableQuantity: newAvailable });
         toast('success', 'Ferramenta atualizada!');
       } else {
-        await addTool({ ...form, availableQuantity: form.totalQuantity });
+        await addTool({ ...form, totalQuantity: newTotal, availableQuantity: newTotal });
         toast('success', 'Ferramenta cadastrada!');
       }
       setModal(false);
@@ -127,10 +149,31 @@ export default function ToolsPage() {
             <label className="label">Código / ID *</label>
             <input type="text" className="input-field" value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))} placeholder="Ex: FER-001" required />
           </div>
-          <div>
-            <label className="label">Quantidade total *</label>
-            <input type="number" className="input-field" min={1} value={form.totalQuantity} onChange={e => setForm(f => ({ ...f, totalQuantity: Number(e.target.value) }))} required />
-          </div>
+          {form.category === 'pendrive' ? (
+            <div className="space-y-3 bg-dark-900/50 p-3 rounded-xl border border-dark-700">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Lotes do Kit ({form.lots.length})</label>
+                <button type="button" onClick={addLot} className="text-gold-400 hover:text-gold-300 text-xs font-bold flex items-center gap-1">
+                  <Plus size={12} /> Add Lote
+                </button>
+              </div>
+              {form.lots.map((lot) => (
+                <div key={lot.id} className="flex gap-2 items-center">
+                  <input type="text" className="input-field py-2 text-sm" placeholder="Nome (Ex: Lote 1)" value={lot.name} onChange={e => updateLot(lot.id, 'name', e.target.value)} required />
+                  <input type="text" className="input-field py-2 text-sm" placeholder="Série/Numeração" value={lot.serial} onChange={e => updateLot(lot.id, 'serial', e.target.value)} required />
+                  {lot.status === 'disponivel' && (
+                    <button type="button" onClick={() => removeLot(lot.id)} className="p-2 text-red-400/50 hover:text-red-400" title="Remover lote"><Trash2 size={16}/></button>
+                  )}
+                </div>
+              ))}
+              {form.lots.length === 0 && <p className="text-xs text-slate-500 italic text-center py-2">Nenhum lote adicionado.</p>}
+            </div>
+          ) : (
+            <div>
+              <label className="label">Quantidade total *</label>
+              <input type="number" className="input-field" min={1} value={form.totalQuantity} onChange={e => setForm(f => ({ ...f, totalQuantity: Number(e.target.value) }))} required />
+            </div>
+          )}
           <div>
             <label className="label">Descrição (opcional)</label>
             <textarea className="input-field resize-none" rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Detalhes adicionais..." />

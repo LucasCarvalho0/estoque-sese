@@ -17,14 +17,20 @@ export default function WithdrawalPage() {
   const [selectedToolId, setSelectedToolId] = useState('');
   const [selectedQty, setSelectedQty] = useState(1);
   const [signature, setSignature] = useState('');
-  const [selectedPendriveKitId, setSelectedPendriveKitId] = useState('');
+  const [selectedPendriveKitAndLot, setSelectedPendriveKitAndLot] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const activeEmployees = state.employees.filter(e => e.active);
   const cartToolIds = cart.map(c => c.toolId);
   
   const availableTools = state.tools.filter(t => t.availableQuantity > 0 && !cartToolIds.includes(t.id) && t.category !== 'pendrive');
-  const availablePendrives = state.tools.filter(t => t.category === 'pendrive' && t.availableQuantity > 0);
+  
+  const availablePendriveLots = state.tools
+    .filter(t => t.category === 'pendrive')
+    .flatMap(t => (t.lots || [])
+      .filter(l => l.status === 'disponivel')
+      .map(lot => ({ tool: t, lot }))
+    );
   
   const selectedTool = state.tools.find(t => t.id === selectedToolId);
 
@@ -56,12 +62,12 @@ export default function WithdrawalPage() {
     e.preventDefault();
     if (!employeeId) { toast('error', 'Selecione um funcionário.'); return; }
     
-    if (availablePendrives.length > 0 && !selectedPendriveKitId) {
-      toast('error', 'A seleção do Kit de Pen-Drive é obrigatória.'); 
+    if (availablePendriveLots.length > 0 && !selectedPendriveKitAndLot) {
+      toast('error', 'A seleção do Kit de Pen-Drive / Lote é obrigatória.'); 
       return;
     }
     
-    if (cart.length === 0 && !selectedPendriveKitId) { toast('error', 'Adicione pelo menos uma ferramenta ou kit.'); return; }
+    if (cart.length === 0 && !selectedPendriveKitAndLot) { toast('error', 'Adicione pelo menos uma ferramenta ou kit.'); return; }
     if (!signature.trim() || signature.length < 100) { 
       toast('error', 'A assinatura do funcionário é obrigatória para finalizar.'); 
       return; 
@@ -80,15 +86,17 @@ export default function WithdrawalPage() {
         date: batchDate,
       }));
 
-      if (selectedPendriveKitId) {
+      if (selectedPendriveKitAndLot) {
+        const [pToolId, pLotId] = selectedPendriveKitAndLot.split('|');
         batchData.push({
           employeeId,
-          toolId: selectedPendriveKitId,
+          toolId: pToolId,
           quantity: 1,
           signature,
           shift: state.currentShift!,
           status: 'retirada',
           date: batchDate,
+          toolLotId: pLotId,
         });
       }
 
@@ -97,7 +105,7 @@ export default function WithdrawalPage() {
       setEmployeeId('');
       setCart([]);
       setSignature('');
-      setSelectedPendriveKitId('');
+      setSelectedPendriveKitAndLot('');
     } catch (err: any) {
       console.error('Erro no salvamento (Turno/Dados):', err);
       toast('error', err.message ?? 'Erro ao registrar retirada.');
@@ -244,18 +252,18 @@ export default function WithdrawalPage() {
               <Package size={12} /> Kit de Pen-Drive (Obrigatório)
             </label>
             
-            {availablePendrives.length === 0 ? (
-               <p className="text-sm text-slate-400 italic">Nenhum kit de pen-drive disponível no estoque.</p>
+            {availablePendriveLots.length === 0 ? (
+               <p className="text-sm text-slate-400 italic">Nenhum lote de pen-drive disponível no estoque.</p>
             ) : (
               <select 
                 className="input-field py-4 text-sm font-bold bg-dark-900 border-purple-500/30 focus:border-purple-500/50 focus:ring-purple-500/20" 
-                value={selectedPendriveKitId} 
-                onChange={e => setSelectedPendriveKitId(e.target.value)}
+                value={selectedPendriveKitAndLot} 
+                onChange={e => setSelectedPendriveKitAndLot(e.target.value)}
               >
-                <option value="">Selecione o kit a ser utilizado...</option>
-                {availablePendrives.map(kit => (
-                  <option key={kit.id} value={kit.id}>
-                    {kit.name} — {kit.availableQuantity} Disp.
+                <option value="">Selecione o lote a ser utilizado...</option>
+                {availablePendriveLots.map(({ tool, lot }) => (
+                  <option key={`${tool.id}|${lot.id}`} value={`${tool.id}|${lot.id}`}>
+                    {tool.name} — {lot.name} (Série: {lot.serial})
                   </option>
                 ))}
               </select>
@@ -275,7 +283,7 @@ export default function WithdrawalPage() {
           <button
             type="submit"
             className="btn-primary w-full h-16 text-lg shadow-xl shadow-gold-500/20 active:scale-95 transition-transform"
-            disabled={submitting || (cart.length === 0 && !selectedPendriveKitId)}
+            disabled={submitting || (cart.length === 0 && !selectedPendriveKitAndLot)}
           >
             {submitting ? <Loader2 size={24} className="animate-spin" /> : <ArrowUpFromLine size={24} />}
             <span className="font-black uppercase tracking-widest">{submitting ? 'PROCESSANDO...' : 'FINALIZAR RETIRADA'}</span>

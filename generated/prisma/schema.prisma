@@ -28,6 +28,7 @@ model Tool {
   available_quantity Int
   description        String   @default("")
   category           String   @default("ferramenta")
+  lots               Json?
   shift              String
   created_at         DateTime @default(now())
 
@@ -49,6 +50,7 @@ model Movement {
   return_signature String?
   return_date      DateTime?
   observation      String?
+  tool_lot_id      String?
 
   employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
   tool     Tool     @relation(fields: [tool_id], references: [id], onDelete: Cascade)

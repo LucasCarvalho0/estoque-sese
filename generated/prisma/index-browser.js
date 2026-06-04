@@ -137,6 +137,7 @@ exports.Prisma.ToolScalarFieldEnum = {
   available_quantity: 'available_quantity',
   description: 'description',
   category: 'category',
+  lots: 'lots',
   shift: 'shift',
   created_at: 'created_at'
 };
@@ -153,7 +154,8 @@ exports.Prisma.MovementScalarFieldEnum = {
   return_quantity: 'return_quantity',
   return_signature: 'return_signature',
   return_date: 'return_date',
-  observation: 'observation'
+  observation: 'observation',
+  tool_lot_id: 'tool_lot_id'
 };
 
 exports.Prisma.InventoryScalarFieldEnum = {
@@ -180,6 +182,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
 exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
@@ -189,15 +196,15 @@ exports.Prisma.QueryMode = {
   insensitive: 'insensitive'
 };
 
-exports.Prisma.NullsOrder = {
-  first: 'first',
-  last: 'last'
-};
-
 exports.Prisma.JsonNullValueFilter = {
   DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 
 

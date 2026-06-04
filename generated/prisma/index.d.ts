@@ -2433,6 +2433,7 @@ export namespace Prisma {
     available_quantity: number
     description: number
     category: number
+    lots: number
     shift: number
     created_at: number
     _all: number
@@ -2481,6 +2482,7 @@ export namespace Prisma {
     available_quantity?: true
     description?: true
     category?: true
+    lots?: true
     shift?: true
     created_at?: true
     _all?: true
@@ -2580,6 +2582,7 @@ export namespace Prisma {
     available_quantity: number
     description: string
     category: string
+    lots: JsonValue | null
     shift: string
     created_at: Date
     _count: ToolCountAggregateOutputType | null
@@ -2611,6 +2614,7 @@ export namespace Prisma {
     available_quantity?: boolean
     description?: boolean
     category?: boolean
+    lots?: boolean
     shift?: boolean
     created_at?: boolean
     movements?: boolean | Tool$movementsArgs<ExtArgs>
@@ -2625,6 +2629,7 @@ export namespace Prisma {
     available_quantity?: boolean
     description?: boolean
     category?: boolean
+    lots?: boolean
     shift?: boolean
     created_at?: boolean
   }, ExtArgs["result"]["tool"]>
@@ -2637,6 +2642,7 @@ export namespace Prisma {
     available_quantity?: boolean
     description?: boolean
     category?: boolean
+    lots?: boolean
     shift?: boolean
     created_at?: boolean
   }, ExtArgs["result"]["tool"]>
@@ -2649,11 +2655,12 @@ export namespace Prisma {
     available_quantity?: boolean
     description?: boolean
     category?: boolean
+    lots?: boolean
     shift?: boolean
     created_at?: boolean
   }
 
-  export type ToolOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "code" | "total_quantity" | "available_quantity" | "description" | "category" | "shift" | "created_at", ExtArgs["result"]["tool"]>
+  export type ToolOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "code" | "total_quantity" | "available_quantity" | "description" | "category" | "lots" | "shift" | "created_at", ExtArgs["result"]["tool"]>
   export type ToolInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     movements?: boolean | Tool$movementsArgs<ExtArgs>
     _count?: boolean | ToolCountOutputTypeDefaultArgs<ExtArgs>
@@ -2674,6 +2681,7 @@ export namespace Prisma {
       available_quantity: number
       description: string
       category: string
+      lots: Prisma.JsonValue | null
       shift: string
       created_at: Date
     }, ExtArgs["result"]["tool"]>
@@ -3107,6 +3115,7 @@ export namespace Prisma {
     readonly available_quantity: FieldRef<"Tool", 'Int'>
     readonly description: FieldRef<"Tool", 'String'>
     readonly category: FieldRef<"Tool", 'String'>
+    readonly lots: FieldRef<"Tool", 'Json'>
     readonly shift: FieldRef<"Tool", 'String'>
     readonly created_at: FieldRef<"Tool", 'DateTime'>
   }
@@ -3579,6 +3588,7 @@ export namespace Prisma {
     return_signature: string | null
     return_date: Date | null
     observation: string | null
+    tool_lot_id: string | null
   }
 
   export type MovementMaxAggregateOutputType = {
@@ -3594,6 +3604,7 @@ export namespace Prisma {
     return_signature: string | null
     return_date: Date | null
     observation: string | null
+    tool_lot_id: string | null
   }
 
   export type MovementCountAggregateOutputType = {
@@ -3609,6 +3620,7 @@ export namespace Prisma {
     return_signature: number
     return_date: number
     observation: number
+    tool_lot_id: number
     _all: number
   }
 
@@ -3636,6 +3648,7 @@ export namespace Prisma {
     return_signature?: true
     return_date?: true
     observation?: true
+    tool_lot_id?: true
   }
 
   export type MovementMaxAggregateInputType = {
@@ -3651,6 +3664,7 @@ export namespace Prisma {
     return_signature?: true
     return_date?: true
     observation?: true
+    tool_lot_id?: true
   }
 
   export type MovementCountAggregateInputType = {
@@ -3666,6 +3680,7 @@ export namespace Prisma {
     return_signature?: true
     return_date?: true
     observation?: true
+    tool_lot_id?: true
     _all?: true
   }
 
@@ -3768,6 +3783,7 @@ export namespace Prisma {
     return_signature: string | null
     return_date: Date | null
     observation: string | null
+    tool_lot_id: string | null
     _count: MovementCountAggregateOutputType | null
     _avg: MovementAvgAggregateOutputType | null
     _sum: MovementSumAggregateOutputType | null
@@ -3802,6 +3818,7 @@ export namespace Prisma {
     return_signature?: boolean
     return_date?: boolean
     observation?: boolean
+    tool_lot_id?: boolean
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
     tool?: boolean | ToolDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["movement"]>
@@ -3819,6 +3836,7 @@ export namespace Prisma {
     return_signature?: boolean
     return_date?: boolean
     observation?: boolean
+    tool_lot_id?: boolean
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
     tool?: boolean | ToolDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["movement"]>
@@ -3836,6 +3854,7 @@ export namespace Prisma {
     return_signature?: boolean
     return_date?: boolean
     observation?: boolean
+    tool_lot_id?: boolean
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
     tool?: boolean | ToolDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["movement"]>
@@ -3853,9 +3872,10 @@ export namespace Prisma {
     return_signature?: boolean
     return_date?: boolean
     observation?: boolean
+    tool_lot_id?: boolean
   }
 
-  export type MovementOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "employee_id" | "tool_id" | "quantity" | "signature" | "shift" | "date" | "status" | "return_quantity" | "return_signature" | "return_date" | "observation", ExtArgs["result"]["movement"]>
+  export type MovementOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "employee_id" | "tool_id" | "quantity" | "signature" | "shift" | "date" | "status" | "return_quantity" | "return_signature" | "return_date" | "observation" | "tool_lot_id", ExtArgs["result"]["movement"]>
   export type MovementInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     employee?: boolean | EmployeeDefaultArgs<ExtArgs>
     tool?: boolean | ToolDefaultArgs<ExtArgs>
@@ -3888,6 +3908,7 @@ export namespace Prisma {
       return_signature: string | null
       return_date: Date | null
       observation: string | null
+      tool_lot_id: string | null
     }, ExtArgs["result"]["movement"]>
     composites: {}
   }
@@ -4325,6 +4346,7 @@ export namespace Prisma {
     readonly return_signature: FieldRef<"Movement", 'String'>
     readonly return_date: FieldRef<"Movement", 'DateTime'>
     readonly observation: FieldRef<"Movement", 'String'>
+    readonly tool_lot_id: FieldRef<"Movement", 'String'>
   }
     
 
@@ -6813,6 +6835,7 @@ export namespace Prisma {
     available_quantity: 'available_quantity',
     description: 'description',
     category: 'category',
+    lots: 'lots',
     shift: 'shift',
     created_at: 'created_at'
   };
@@ -6832,7 +6855,8 @@ export namespace Prisma {
     return_quantity: 'return_quantity',
     return_signature: 'return_signature',
     return_date: 'return_date',
-    observation: 'observation'
+    observation: 'observation',
+    tool_lot_id: 'tool_lot_id'
   };
 
   export type MovementScalarFieldEnum = (typeof MovementScalarFieldEnum)[keyof typeof MovementScalarFieldEnum]
@@ -6871,6 +6895,14 @@ export namespace Prisma {
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
   export const JsonNullValueInput: {
     JsonNull: typeof JsonNull
   };
@@ -6886,14 +6918,6 @@ export namespace Prisma {
   export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
-  export const NullsOrder: {
-    first: 'first',
-    last: 'last'
-  };
-
-  export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
-
-
   export const JsonNullValueFilter: {
     DbNull: typeof DbNull,
     JsonNull: typeof JsonNull,
@@ -6901,6 +6925,14 @@ export namespace Prisma {
   };
 
   export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
+
+
+  export const NullsOrder: {
+    first: 'first',
+    last: 'last'
+  };
+
+  export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
   /**
@@ -7059,6 +7091,7 @@ export namespace Prisma {
     available_quantity?: IntFilter<"Tool"> | number
     description?: StringFilter<"Tool"> | string
     category?: StringFilter<"Tool"> | string
+    lots?: JsonNullableFilter<"Tool">
     shift?: StringFilter<"Tool"> | string
     created_at?: DateTimeFilter<"Tool"> | Date | string
     movements?: MovementListRelationFilter
@@ -7072,6 +7105,7 @@ export namespace Prisma {
     available_quantity?: SortOrder
     description?: SortOrder
     category?: SortOrder
+    lots?: SortOrderInput | SortOrder
     shift?: SortOrder
     created_at?: SortOrder
     movements?: MovementOrderByRelationAggregateInput
@@ -7088,6 +7122,7 @@ export namespace Prisma {
     available_quantity?: IntFilter<"Tool"> | number
     description?: StringFilter<"Tool"> | string
     category?: StringFilter<"Tool"> | string
+    lots?: JsonNullableFilter<"Tool">
     shift?: StringFilter<"Tool"> | string
     created_at?: DateTimeFilter<"Tool"> | Date | string
     movements?: MovementListRelationFilter
@@ -7101,6 +7136,7 @@ export namespace Prisma {
     available_quantity?: SortOrder
     description?: SortOrder
     category?: SortOrder
+    lots?: SortOrderInput | SortOrder
     shift?: SortOrder
     created_at?: SortOrder
     _count?: ToolCountOrderByAggregateInput
@@ -7121,6 +7157,7 @@ export namespace Prisma {
     available_quantity?: IntWithAggregatesFilter<"Tool"> | number
     description?: StringWithAggregatesFilter<"Tool"> | string
     category?: StringWithAggregatesFilter<"Tool"> | string
+    lots?: JsonNullableWithAggregatesFilter<"Tool">
     shift?: StringWithAggregatesFilter<"Tool"> | string
     created_at?: DateTimeWithAggregatesFilter<"Tool"> | Date | string
   }
@@ -7141,6 +7178,7 @@ export namespace Prisma {
     return_signature?: StringNullableFilter<"Movement"> | string | null
     return_date?: DateTimeNullableFilter<"Movement"> | Date | string | null
     observation?: StringNullableFilter<"Movement"> | string | null
+    tool_lot_id?: StringNullableFilter<"Movement"> | string | null
     employee?: XOR<EmployeeScalarRelationFilter, EmployeeWhereInput>
     tool?: XOR<ToolScalarRelationFilter, ToolWhereInput>
   }
@@ -7158,6 +7196,7 @@ export namespace Prisma {
     return_signature?: SortOrderInput | SortOrder
     return_date?: SortOrderInput | SortOrder
     observation?: SortOrderInput | SortOrder
+    tool_lot_id?: SortOrderInput | SortOrder
     employee?: EmployeeOrderByWithRelationInput
     tool?: ToolOrderByWithRelationInput
   }
@@ -7178,6 +7217,7 @@ export namespace Prisma {
     return_signature?: StringNullableFilter<"Movement"> | string | null
     return_date?: DateTimeNullableFilter<"Movement"> | Date | string | null
     observation?: StringNullableFilter<"Movement"> | string | null
+    tool_lot_id?: StringNullableFilter<"Movement"> | string | null
     employee?: XOR<EmployeeScalarRelationFilter, EmployeeWhereInput>
     tool?: XOR<ToolScalarRelationFilter, ToolWhereInput>
   }, "id">
@@ -7195,6 +7235,7 @@ export namespace Prisma {
     return_signature?: SortOrderInput | SortOrder
     return_date?: SortOrderInput | SortOrder
     observation?: SortOrderInput | SortOrder
+    tool_lot_id?: SortOrderInput | SortOrder
     _count?: MovementCountOrderByAggregateInput
     _avg?: MovementAvgOrderByAggregateInput
     _max?: MovementMaxOrderByAggregateInput
@@ -7218,6 +7259,7 @@ export namespace Prisma {
     return_signature?: StringNullableWithAggregatesFilter<"Movement"> | string | null
     return_date?: DateTimeNullableWithAggregatesFilter<"Movement"> | Date | string | null
     observation?: StringNullableWithAggregatesFilter<"Movement"> | string | null
+    tool_lot_id?: StringNullableWithAggregatesFilter<"Movement"> | string | null
   }
 
   export type InventoryWhereInput = {
@@ -7414,6 +7456,7 @@ export namespace Prisma {
     available_quantity: number
     description?: string
     category?: string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift: string
     created_at?: Date | string
     movements?: MovementCreateNestedManyWithoutToolInput
@@ -7427,6 +7470,7 @@ export namespace Prisma {
     available_quantity: number
     description?: string
     category?: string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift: string
     created_at?: Date | string
     movements?: MovementUncheckedCreateNestedManyWithoutToolInput
@@ -7440,6 +7484,7 @@ export namespace Prisma {
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     movements?: MovementUpdateManyWithoutToolNestedInput
@@ -7453,6 +7498,7 @@ export namespace Prisma {
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
     movements?: MovementUncheckedUpdateManyWithoutToolNestedInput
@@ -7466,6 +7512,7 @@ export namespace Prisma {
     available_quantity: number
     description?: string
     category?: string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift: string
     created_at?: Date | string
   }
@@ -7478,6 +7525,7 @@ export namespace Prisma {
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -7490,6 +7538,7 @@ export namespace Prisma {
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -7505,6 +7554,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
     employee: EmployeeCreateNestedOneWithoutMovementsInput
     tool: ToolCreateNestedOneWithoutMovementsInput
   }
@@ -7522,6 +7572,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
   }
 
   export type MovementUpdateInput = {
@@ -7535,6 +7586,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
     employee?: EmployeeUpdateOneRequiredWithoutMovementsNestedInput
     tool?: ToolUpdateOneRequiredWithoutMovementsNestedInput
   }
@@ -7552,6 +7604,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MovementCreateManyInput = {
@@ -7567,6 +7620,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
   }
 
   export type MovementUpdateManyMutationInput = {
@@ -7580,6 +7634,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MovementUncheckedUpdateManyInput = {
@@ -7595,6 +7650,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type InventoryCreateInput = {
@@ -7848,6 +7904,34 @@ export namespace Prisma {
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntFilter<$PrismaModel> | number
   }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
+  }
 
   export type ToolCountOrderByAggregateInput = {
     id?: SortOrder
@@ -7857,6 +7941,7 @@ export namespace Prisma {
     available_quantity?: SortOrder
     description?: SortOrder
     category?: SortOrder
+    lots?: SortOrder
     shift?: SortOrder
     created_at?: SortOrder
   }
@@ -7910,6 +7995,32 @@ export namespace Prisma {
     _min?: NestedIntFilter<$PrismaModel>
     _max?: NestedIntFilter<$PrismaModel>
   }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
 
   export type IntNullableFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
@@ -7958,11 +8069,6 @@ export namespace Prisma {
     isNot?: ToolWhereInput
   }
 
-  export type SortOrderInput = {
-    sort: SortOrder
-    nulls?: NullsOrder
-  }
-
   export type MovementCountOrderByAggregateInput = {
     id?: SortOrder
     employee_id?: SortOrder
@@ -7976,6 +8082,7 @@ export namespace Prisma {
     return_signature?: SortOrder
     return_date?: SortOrder
     observation?: SortOrder
+    tool_lot_id?: SortOrder
   }
 
   export type MovementAvgOrderByAggregateInput = {
@@ -7996,6 +8103,7 @@ export namespace Prisma {
     return_signature?: SortOrder
     return_date?: SortOrder
     observation?: SortOrder
+    tool_lot_id?: SortOrder
   }
 
   export type MovementMinOrderByAggregateInput = {
@@ -8011,6 +8119,7 @@ export namespace Prisma {
     return_signature?: SortOrder
     return_date?: SortOrder
     observation?: SortOrder
+    tool_lot_id?: SortOrder
   }
 
   export type MovementSumOrderByAggregateInput = {
@@ -8435,6 +8544,29 @@ export namespace Prisma {
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
   }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type NestedStringNullableFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
@@ -8553,6 +8685,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
     tool: ToolCreateNestedOneWithoutMovementsInput
   }
 
@@ -8568,6 +8701,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
   }
 
   export type MovementCreateOrConnectWithoutEmployeeInput = {
@@ -8612,6 +8746,7 @@ export namespace Prisma {
     return_signature?: StringNullableFilter<"Movement"> | string | null
     return_date?: DateTimeNullableFilter<"Movement"> | Date | string | null
     observation?: StringNullableFilter<"Movement"> | string | null
+    tool_lot_id?: StringNullableFilter<"Movement"> | string | null
   }
 
   export type MovementCreateWithoutToolInput = {
@@ -8625,6 +8760,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
     employee: EmployeeCreateNestedOneWithoutMovementsInput
   }
 
@@ -8640,6 +8776,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
   }
 
   export type MovementCreateOrConnectWithoutToolInput = {
@@ -8699,6 +8836,7 @@ export namespace Prisma {
     available_quantity: number
     description?: string
     category?: string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift: string
     created_at?: Date | string
   }
@@ -8711,6 +8849,7 @@ export namespace Prisma {
     available_quantity: number
     description?: string
     category?: string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift: string
     created_at?: Date | string
   }
@@ -8768,6 +8907,7 @@ export namespace Prisma {
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8780,6 +8920,7 @@ export namespace Prisma {
     available_quantity?: IntFieldUpdateOperationsInput | number
     description?: StringFieldUpdateOperationsInput | string
     category?: StringFieldUpdateOperationsInput | string
+    lots?: NullableJsonNullValueInput | InputJsonValue
     shift?: StringFieldUpdateOperationsInput | string
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8796,6 +8937,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
   }
 
   export type MovementUpdateWithoutEmployeeInput = {
@@ -8809,6 +8951,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
     tool?: ToolUpdateOneRequiredWithoutMovementsNestedInput
   }
 
@@ -8824,6 +8967,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MovementUncheckedUpdateManyWithoutEmployeeInput = {
@@ -8838,6 +8982,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MovementCreateManyToolInput = {
@@ -8852,6 +8997,7 @@ export namespace Prisma {
     return_signature?: string | null
     return_date?: Date | string | null
     observation?: string | null
+    tool_lot_id?: string | null
   }
 
   export type MovementUpdateWithoutToolInput = {
@@ -8865,6 +9011,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
     employee?: EmployeeUpdateOneRequiredWithoutMovementsNestedInput
   }
 
@@ -8880,6 +9027,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MovementUncheckedUpdateManyWithoutToolInput = {
@@ -8894,6 +9042,7 @@ export namespace Prisma {
     return_signature?: NullableStringFieldUpdateOperationsInput | string | null
     return_date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     observation?: NullableStringFieldUpdateOperationsInput | string | null
+    tool_lot_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
 

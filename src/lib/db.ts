@@ -133,7 +133,7 @@ export async function updateMovements(movements: Movement[]): Promise<void> {
 }
 
 export async function returnMovementsBulk(
-  returns: { id: string; qty: number; sig: string; obs?: string; toolId: string; movQty: number }[]
+  returns: { id: string; qty: number; sig: string; obs?: string; toolId: string; movQty: number; toolLotId?: string }[]
 ): Promise<void> {
   await api('/movements/bulk-return', {
     method: 'POST',

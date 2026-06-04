@@ -58,12 +58,21 @@ export default function HistoryPage() {
     return emp.matricula ? `${emp.name} (Mat. ${emp.matricula})` : emp.name;
   }
   function getToolName(id: string) { return state.tools.find(t => t.id === id)?.name ?? '—'; }
+  function getToolDisplayName(m: Movement) {
+    const t = state.tools.find(x => x.id === m.toolId);
+    if (!t) return '—';
+    if (m.toolLotId && t.lots) {
+      const lot = t.lots.find(l => l.id === m.toolLotId);
+      if (lot) return `${t.name} — ${lot.name} (Série: ${lot.serial})`;
+    }
+    return t.name;
+  }
   function getToolCode(id: string) { return state.tools.find(t => t.id === id)?.code ?? '—'; }
 
   const filtered = useMemo(() => {
     return state.movements.filter(m => {
       const empName = getEmployeeLabel(m.employeeId).toLowerCase();
-      const toolName = getToolName(m.toolId).toLowerCase();
+      const toolName = getToolDisplayName(m).toLowerCase();
       const q = search.toLowerCase();
       
       if (search && !empName.includes(q) && !toolName.includes(q)) return false;
@@ -154,13 +163,17 @@ export default function HistoryPage() {
 
       autoTable(doc, {
         startY: currentY,
-        head: [['Ferramenta', 'Cód.', 'Retirada', 'Devolvida', 'Falta', 'Status', 'Observação']],
+        head: [['Ferramenta / Kit Pendrive', 'Lote', 'Numeração (Série)', 'Saída', 'Dev.', 'Falta', 'Status', 'Observação']],
         body: batch.movements.map(m => {
+          const tool = state.tools.find(t => t.id === m.toolId);
+          const isPendrive = tool?.category === 'pendrive';
+          const lot = isPendrive && m.toolLotId && tool?.lots ? tool.lots.find(l => l.id === m.toolLotId) : null;
           const retQty = m.returnQuantity != null ? m.returnQuantity : 0;
           const diff = m.returnQuantity != null ? m.quantity - m.returnQuantity : 0;
           return [
-            getToolName(m.toolId),
-            getToolCode(m.toolId),
+            tool?.name ?? '—',
+            lot ? lot.name : (isPendrive ? '—' : '-'),
+            lot ? lot.serial : (isPendrive ? '—' : '-'),
             String(m.quantity),
             m.status === 'retirada' ? '-' : String(retQty),
             diff > 0 ? String(diff) : '0',
@@ -168,13 +181,20 @@ export default function HistoryPage() {
             m.observation || '-'
           ];
         }),
-        styles: { fontSize: 8 },
+        styles: { fontSize: 7.5 },
         headStyles: { fillColor: [40, 40, 40] },
+        columnStyles: { 0: { cellWidth: 40 }, 1: { cellWidth: 22 }, 2: { cellWidth: 28 } },
         didParseCell: function(data) {
            if (data.section === 'body') {
-              const status = (data.row.raw as any[])[5] as string;
-              if (status === 'Pendente' || status === 'Parcial' || (data.column.index === 4 && data.cell.raw !== '0')) {
-                data.cell.styles.textColor = [220, 38, 38]; // Red highlight for fault
+              const status = (data.row.raw as any[])[6] as string;
+              const lotVal = (data.row.raw as any[])[1] as string;
+              const isPendriveRow = lotVal !== '-';
+              if (isPendriveRow && data.section === 'body') {
+                data.cell.styles.fillColor = [88, 28, 135]; // purple-900
+                data.cell.styles.textColor = [216, 180, 254]; // purple-300
+              }
+              if (status === 'Pendente' || status === 'Parcial' || (data.column.index === 5 && data.cell.raw !== '0')) {
+                data.cell.styles.textColor = [220, 38, 38];
                 data.cell.styles.fontStyle = 'bold';
               }
            }
@@ -232,19 +252,20 @@ export default function HistoryPage() {
 
     // Columns config
     ws.columns = [
-      { key: 'col1', width: 25 },
-      { key: 'col2', width: 20 },
-      { key: 'col3', width: 15 },
-      { key: 'col4', width: 12 },
-      { key: 'col5', width: 12 },
-      { key: 'col6', width: 18 },
-      { key: 'col7', width: 30 },
+      { key: 'col1', width: 30 }, // Ferramenta
+      { key: 'col2', width: 18 }, // Lote
+      { key: 'col3', width: 22 }, // Numeração
+      { key: 'col4', width: 12 }, // Saída
+      { key: 'col5', width: 12 }, // Devolvida
+      { key: 'col6', width: 12 }, // Falta
+      { key: 'col7', width: 18 }, // Status
+      { key: 'col8', width: 30 }, // Observação
     ];
 
     let currentRow = 1;
 
     // Header principal
-    ws.mergeCells(`A${currentRow}:G${currentRow}`);
+    ws.mergeCells(`A${currentRow}:H${currentRow}`);
     const titleCell = ws.getCell(`A${currentRow}`);
     titleCell.value = 'Estoque Sesé — Histórico de Movimentações';
     titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
@@ -253,7 +274,7 @@ export default function HistoryPage() {
     ws.getRow(currentRow).height = 30;
     currentRow++;
 
-    ws.mergeCells(`A${currentRow}:G${currentRow}`);
+    ws.mergeCells(`A${currentRow}:H${currentRow}`);
     ws.getCell(`A${currentRow}`).value = `Turno: ${shiftInfo?.label ?? '—'}  |  Responsável: ${state.responsible?.name ?? '—'}  |  Emitido: ${format(new Date(), "dd/MM/yyyy HH:mm")}`;
     ws.getCell(`A${currentRow}`).alignment = { horizontal: 'center' };
     currentRow += 2; // Espaço
@@ -266,7 +287,7 @@ export default function HistoryPage() {
       const title = `${badge.label} - ${getEmployeeLabel(batch.employeeId)}`;
       
       // Cabeçalho do Bloco
-      ws.mergeCells(`A${currentRow}:G${currentRow}`);
+      ws.mergeCells(`A${currentRow}:H${currentRow}`);
       const tCell = ws.getCell(`A${currentRow}`);
       tCell.value = title;
       tCell.font = { bold: true, size: 12, color: { argb: 'FFFFFFFF' } };
@@ -288,11 +309,11 @@ export default function HistoryPage() {
       currentRow++;
 
       // Tabela Títulos
-      const headers = ['Ferramenta', 'Cód.', 'Retirada', 'Devolvida', 'Falta', 'Status', 'Observação'];
+      const headers = ['Ferramenta / Kit Pendrive', 'Lote', 'Numeração (Série)', 'Saída', 'Devolvida', 'Falta', 'Status', 'Observação'];
       const headerRow = ws.getRow(currentRow);
       headerRow.values = headers;
       headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-      for (let i = 1; i <= 7; i++) {
+      for (let i = 1; i <= 8; i++) {
         const cell = headerRow.getCell(i);
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF374151' } };
       }
@@ -300,14 +321,18 @@ export default function HistoryPage() {
 
       // Tabela Valores
       batch.movements.forEach(m => {
+        const tool = state.tools.find(t => t.id === m.toolId);
+        const isPendrive = tool?.category === 'pendrive';
+        const lot = isPendrive && m.toolLotId && tool?.lots ? tool.lots.find(l => l.id === m.toolLotId) : null;
         const retQty = m.returnQuantity != null ? m.returnQuantity : 0;
         const diff = m.returnQuantity != null ? m.quantity - m.returnQuantity : 0;
         const statusStr = statusLabel(m.status);
         
         const row = ws.getRow(currentRow);
         row.values = [
-          getToolName(m.toolId),
-          getToolCode(m.toolId),
+          tool?.name ?? '—',
+          lot ? lot.name : (isPendrive ? '—' : '-'),
+          lot ? lot.serial : (isPendrive ? '—' : '-'),
           m.quantity,
           m.status === 'retirada' ? '-' : retQty,
           diff > 0 ? diff : 0,
@@ -315,8 +340,14 @@ export default function HistoryPage() {
           m.observation || '-'
         ];
 
-        if (statusStr === 'Pendente' || statusStr === 'Parcial' || diff > 0) {
-           for (let i = 1; i <= 7; i++) {
+        if (isPendrive) {
+          for (let i = 1; i <= 8; i++) {
+            const c = row.getCell(i);
+            c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4C1D95' } }; // purple-900
+            c.font = { color: { argb: 'FFD8B4FE' }, bold: true }; // purple-300
+          }
+        } else if (statusStr === 'Pendente' || statusStr === 'Parcial' || diff > 0) {
+           for (let i = 1; i <= 8; i++) {
              const c = row.getCell(i);
              c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
              c.font = { color: { argb: 'FFB91C1C' }, bold: true };
@@ -516,7 +547,7 @@ export default function HistoryPage() {
                           return (
                             <div key={m.id} className={`p-4 flex items-center justify-between gap-4 group/item hover:bg-dark-700/20 transition-colors ${diff > 0 ? 'bg-red-500/10 border-l-2 border-red-500 rounded-lg my-1' : ''}`}>
                                <div className="min-w-0 flex-1">
-                                 <p className={`text-xs lg:text-sm font-bold truncate ${diff > 0 ? 'text-red-300' : 'text-slate-200 group-hover/item:text-gold-400 transition-colors'}`}>{getToolName(m.toolId)}</p>
+                                 <p className={`text-xs lg:text-sm font-bold truncate ${diff > 0 ? 'text-red-300' : 'text-slate-200 group-hover/item:text-gold-400 transition-colors'}`}>{getToolDisplayName(m)}</p>
                                  <p className="text-[10px] font-mono text-slate-500 truncate mt-0.5">{getToolCode(m.toolId)}</p>
                                  {m.observation && (
                                    <div className="mt-1.5 flex items-start gap-1.5 bg-red-500/5 p-2 rounded-lg border border-red-500/10">

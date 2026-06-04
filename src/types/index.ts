@@ -26,6 +26,7 @@ export interface Tool {
   availableQuantity: number;
   description: string;
   category: 'ferramenta' | 'pendrive';
+  lots?: ToolLot[];
   shift: ShiftId;
   createdAt: string;
 }
@@ -45,6 +46,7 @@ export interface Movement {
   returnSignature?: string;
   returnDate?: string;
   observation?: string;
+  toolLotId?: string;
 }
 
 export interface InventoryItem {
