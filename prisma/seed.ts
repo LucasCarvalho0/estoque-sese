@@ -8,16 +8,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  await prisma.user.create({
-    data: {
-      email: "alice@example.com",
-      name: "Alice",
-      posts: {
-        create: [{ title: "Hello World", content: "First post", published: true }],
-      },
-    },
-  });
-  console.log("🔧 Seed data inserted");
+  console.log("🔧 Seed data execution started (no initial data seeded)");
 }
 
 main()

@@ -18,6 +18,13 @@ export interface Employee {
   createdAt: string;
 }
 
+export interface ToolLot {
+  id: string;
+  name: string;
+  serial: string;
+  status: 'disponivel' | 'em_uso' | 'manutencao';
+}
+
 export interface Tool {
   id: string;
   name: string;
