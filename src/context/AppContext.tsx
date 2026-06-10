@@ -157,9 +157,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       // Ordena união decrescente por data
       const movements = Array.from(movementsMap.values()).sort((a, b) => b.date.localeCompare(a.date));
-      // Filter by current shift in memory
+      // Filter by current shift in memory:
+      // - Employees: always shift-specific
+      // - Pendrive kits: shared between all shifts (same physical kits)
+      // - Regular tools: shift-specific
       const employees = shift ? allEmployees.filter(e => e.shift === shift) : allEmployees;
-      const tools = shift ? allTools.filter(t => t.shift === shift) : allTools;
+      const tools = shift
+        ? allTools.filter(t => t.category === 'pendrive' || t.shift === shift)
+        : allTools;
       if (mounted.current) {
         if (shift) saveCache(shift, employees, tools);
         setState(s => ({ ...s, employees, tools, movements, inventories }));

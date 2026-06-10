@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpFromLine, AlertCircle, Loader2, Plus, Trash2, Package, User, Wrench } from 'lucide-react';
+import { ArrowUpFromLine, AlertCircle, Loader2, Plus, Trash2, Package, User, Wrench, HardDrive } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { SignatureInput } from '../components/SignatureInput';
 import { Tool } from '../types';
@@ -10,6 +10,14 @@ interface CartItem {
   quantity: number;
 }
 
+// Cores visuais para cada tipo de kit (por índice)
+const KIT_COLORS = [
+  { ring: 'ring-blue-500/30',  label: 'text-blue-400',  bg: 'border-blue-500/30 focus:border-blue-500/50 focus:ring-blue-500/20',  badge: 'bg-blue-500/20 text-blue-300' },
+  { ring: 'ring-emerald-500/30', label: 'text-emerald-400', bg: 'border-emerald-500/30 focus:border-emerald-500/50 focus:ring-emerald-500/20', badge: 'bg-emerald-500/20 text-emerald-300' },
+  { ring: 'ring-amber-500/30',  label: 'text-amber-400',  bg: 'border-amber-500/30 focus:border-amber-500/50 focus:ring-amber-500/20',  badge: 'bg-amber-500/20 text-amber-300' },
+  { ring: 'ring-purple-500/30', label: 'text-purple-400', bg: 'border-purple-500/30 focus:border-purple-500/50 focus:ring-purple-500/20', badge: 'bg-purple-500/20 text-purple-300' },
+];
+
 export default function WithdrawalPage() {
   const { state, addMovements, toast } = useApp();
   const [employeeId, setEmployeeId] = useState('');
@@ -17,22 +25,26 @@ export default function WithdrawalPage() {
   const [selectedToolId, setSelectedToolId] = useState('');
   const [selectedQty, setSelectedQty] = useState(1);
   const [signature, setSignature] = useState('');
-  const [selectedPendriveKitAndLot, setSelectedPendriveKitAndLot] = useState('');
+  // Record<toolId, "toolId|lotId"> — uma entrada por tipo de kit
+  const [selectedKits, setSelectedKits] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const activeEmployees = state.employees.filter(e => e.active);
   const cartToolIds = cart.map(c => c.toolId);
-  
-  const availableTools = state.tools.filter(t => t.availableQuantity > 0 && !cartToolIds.includes(t.id) && t.category !== 'pendrive');
-  
-  const availablePendriveLots = state.tools
-    .filter(t => t.category === 'pendrive')
-    .flatMap(t => (t.lots || [])
-      .filter(l => l.status === 'disponivel')
-      .map(lot => ({ tool: t, lot }))
-    );
-  
+
+  // Ferramentas comuns (não pendrive)
+  const availableTools = state.tools.filter(
+    t => t.availableQuantity > 0 && !cartToolIds.includes(t.id) && t.category !== 'pendrive'
+  );
+
+  // Todos os tipos de kit de pendrive cadastrados
+  const pendriveKits = state.tools.filter(t => t.category === 'pendrive');
+
   const selectedTool = state.tools.find(t => t.id === selectedToolId);
+
+  function setKit(toolId: string, value: string) {
+    setSelectedKits(prev => ({ ...prev, [toolId]: value }));
+  }
 
   function addToCart() {
     if (!selectedToolId) { toast('error', 'Selecione uma ferramenta.'); return; }
@@ -58,24 +70,24 @@ export default function WithdrawalPage() {
     }));
   }
 
+  // Kits selecionados (somente os que têm valor)
+  const chosenKits = Object.values(selectedKits).filter(v => v !== '');
+  const totalItems = cart.length + chosenKits.length;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!employeeId) { toast('error', 'Selecione um funcionário.'); return; }
-    
-    if (availablePendriveLots.length > 0 && !selectedPendriveKitAndLot) {
-      toast('error', 'A seleção do Kit de Pen-Drive / Lote é obrigatória.'); 
+    if (totalItems === 0) { toast('error', 'Adicione pelo menos uma ferramenta ou selecione um kit.'); return; }
+    if (!signature.trim() || signature.length < 100) {
+      toast('error', 'A assinatura do funcionário é obrigatória para finalizar.');
       return;
-    }
-    
-    if (cart.length === 0 && !selectedPendriveKitAndLot) { toast('error', 'Adicione pelo menos uma ferramenta ou kit.'); return; }
-    if (!signature.trim() || signature.length < 100) { 
-      toast('error', 'A assinatura do funcionário é obrigatória para finalizar.'); 
-      return; 
     }
 
     setSubmitting(true);
     try {
       const batchDate = new Date().toISOString();
+
+      // Ferramentas comuns
       const batchData: any[] = cart.map(item => ({
         employeeId,
         toolId: item.toolId,
@@ -86,8 +98,9 @@ export default function WithdrawalPage() {
         date: batchDate,
       }));
 
-      if (selectedPendriveKitAndLot) {
-        const [pToolId, pLotId] = selectedPendriveKitAndLot.split('|');
+      // Kits de pendrive selecionados
+      for (const value of chosenKits) {
+        const [pToolId, pLotId] = value.split('|');
         batchData.push({
           employeeId,
           toolId: pToolId,
@@ -105,9 +118,9 @@ export default function WithdrawalPage() {
       setEmployeeId('');
       setCart([]);
       setSignature('');
-      setSelectedPendriveKitAndLot('');
+      setSelectedKits({});
     } catch (err: any) {
-      console.error('Erro no salvamento (Turno/Dados):', err);
+      console.error('Erro no salvamento:', err);
       toast('error', err.message ?? 'Erro ao registrar retirada.');
     } finally {
       setSubmitting(false);
@@ -122,33 +135,32 @@ export default function WithdrawalPage() {
         </div>
         <div>
           <h2 className="text-xl lg:text-2xl font-black text-slate-100 uppercase tracking-tight">Nova Retirada</h2>
-          <p className="text-xs text-slate-500 font-medium">Saída de ferramentas do estoque</p>
+          <p className="text-xs text-slate-500 font-medium">Saída de ferramentas e kits do estoque</p>
         </div>
       </div>
 
-      {activeEmployees.length === 0 || state.tools.length === 0 ? (
+      {activeEmployees.length === 0 ? (
         <div className="card bg-amber-950/20 border-amber-500/30 p-6 flex items-start gap-4">
           <AlertCircle size={24} className="text-amber-400 shrink-0" />
           <div>
             <p className="font-bold text-amber-200">Atenção!</p>
             <p className="text-sm text-amber-300/80 mt-1 leading-relaxed">
-              {activeEmployees.length === 0
-                ? 'Nenhum funcionário ativo no sistema. Cadastre funcionários para poder realizar retiradas.'
-                : 'Nenhuma ferramenta disponível no estoque no momento.'}
+              Nenhum funcionário ativo no sistema. Cadastre funcionários para poder realizar retiradas.
             </p>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Employee Section */}
+
+          {/* ── Funcionário ─────────────────────────────── */}
           <div className="card p-5 lg:p-6 bg-dark-800 border-none">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 block flex items-center gap-2">
               <User size={12} /> Funcionário Responsável *
             </label>
-            <select 
-              className="input-field py-4 text-base font-bold bg-dark-900" 
-              value={employeeId} 
-              onChange={e => setEmployeeId(e.target.value)} 
+            <select
+              className="input-field py-4 text-base font-bold bg-dark-900"
+              value={employeeId}
+              onChange={e => setEmployeeId(e.target.value)}
               required
             >
               <option value="">Selecione o funcionário...</option>
@@ -158,12 +170,78 @@ export default function WithdrawalPage() {
             </select>
           </div>
 
-          {/* Tools Picker Section */}
+          {/* ── Kits de Pendrive ────────────────────────── */}
+          {pendriveKits.length > 0 && (
+            <div className="card p-5 lg:p-6 bg-dark-800 border-none space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <HardDrive size={14} className="text-purple-400" />
+                <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">Kits de Pen-Drive</span>
+              </div>
+
+              <div className="space-y-3">
+                {pendriveKits.map((kit, idx) => {
+                  const color = KIT_COLORS[idx % KIT_COLORS.length];
+                  const availableLots = (kit.lots || []).filter(l => l.status === 'disponivel');
+                  const currentVal = selectedKits[kit.id] || '';
+
+                  return (
+                    <div key={kit.id} className={`rounded-2xl ring-1 ${color.ring} bg-dark-900/60 p-4 space-y-2`}>
+                      <div className="flex items-center justify-between">
+                        <label className={`text-xs font-black uppercase tracking-widest ${color.label}`}>
+                          {kit.name}
+                        </label>
+                        <div className="flex items-center gap-2">
+                          {currentVal ? (
+                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${color.badge}`}>
+                              SELECIONADO
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-dark-700 text-slate-500">
+                              DISPONÍVEL: {availableLots.length}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {availableLots.length === 0 ? (
+                        <p className="text-xs text-slate-500 italic py-1">Nenhum kit disponível no momento.</p>
+                      ) : (
+                        <select
+                          className={`input-field py-3 text-sm font-bold bg-dark-900 ${color.bg}`}
+                          value={currentVal}
+                          onChange={e => setKit(kit.id, e.target.value)}
+                        >
+                          <option value="">Não retirado</option>
+                          {availableLots.map(lot => (
+                            <option key={lot.id} value={`${kit.id}|${lot.id}`}>
+                              {lot.name}{lot.serial ? ` — Nº ${lot.serial}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Resumo dos kits selecionados */}
+              {chosenKits.length > 0 && (
+                <div className="mt-2 p-3 rounded-xl bg-purple-500/5 border border-purple-500/20 flex items-center gap-2">
+                  <Package size={14} className="text-purple-400 shrink-0" />
+                  <p className="text-xs text-purple-300 font-bold">
+                    {chosenKits.length} kit{chosenKits.length > 1 ? 's' : ''} selecionado{chosenKits.length > 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Ferramentas Avulsas ──────────────────────── */}
           <div className="card p-5 lg:p-6 bg-dark-800 border-none space-y-4">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block flex items-center gap-2">
-              <Wrench size={12} /> Adicionar Itens *
+              <Wrench size={12} /> Ferramentas Adicionais (opcional)
             </label>
-            
+
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <select
@@ -179,7 +257,7 @@ export default function WithdrawalPage() {
                   ))}
                 </select>
               </div>
-              
+
               <div className="flex gap-3">
                 {selectedTool && (
                   <input
@@ -203,11 +281,11 @@ export default function WithdrawalPage() {
             </div>
           </div>
 
-          {/* Cart Section */}
+          {/* ── Carrinho de ferramentas ──────────────────── */}
           {cart.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between px-1">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Itens Selecionados</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Ferramentas Selecionadas</p>
                 <span className="text-[10px] px-2 py-0.5 bg-gold-500/20 text-gold-400 rounded-full font-black">{cart.length}</span>
               </div>
               <div className="space-y-2.5">
@@ -232,9 +310,9 @@ export default function WithdrawalPage() {
                           onChange={e => updateQty(item.toolId, Number(e.target.value))}
                         />
                       </div>
-                      <button 
-                        type="button" 
-                        onClick={() => removeFromCart(item.toolId)} 
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(item.toolId)}
                         className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition-all border border-red-500/20 active:scale-95"
                       >
                         <Trash2 size={16} />
@@ -246,44 +324,20 @@ export default function WithdrawalPage() {
             </div>
           )}
 
-          {/* Pendrive Update Section */}
-          <div className="card p-5 lg:p-6 bg-dark-800 border-none ring-1 ring-purple-500/20">
-            <label className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-3 block flex items-center gap-2">
-              <Package size={12} /> Kit de Pen-Drive (Obrigatório)
-            </label>
-            
-            {availablePendriveLots.length === 0 ? (
-               <p className="text-sm text-slate-400 italic">Nenhum lote de pen-drive disponível no estoque.</p>
-            ) : (
-              <select 
-                className="input-field py-4 text-sm font-bold bg-dark-900 border-purple-500/30 focus:border-purple-500/50 focus:ring-purple-500/20" 
-                value={selectedPendriveKitAndLot} 
-                onChange={e => setSelectedPendriveKitAndLot(e.target.value)}
-              >
-                <option value="">Selecione o lote a ser utilizado...</option>
-                {availablePendriveLots.map(({ tool, lot }) => (
-                  <option key={`${tool.id}|${lot.id}`} value={`${tool.id}|${lot.id}`}>
-                    {tool.name} — {lot.name} (Série: {lot.serial})
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* Signature Section */}
+          {/* ── Assinatura ──────────────────────────────── */}
           <div className={`card p-5 lg:p-6 bg-dark-800 border-none transition-all ${!signature ? 'ring-1 ring-red-500/20' : 'ring-1 ring-emerald-500/20'}`}>
-            <SignatureInput 
-              value={signature} 
-              onChange={setSignature} 
-              required 
-              label="Assinatura do Funcionário (Obrigatória)" 
+            <SignatureInput
+              value={signature}
+              onChange={setSignature}
+              required
+              label="Assinatura do Funcionário (Obrigatória)"
             />
           </div>
 
           <button
             type="submit"
             className="btn-primary w-full h-16 text-lg shadow-xl shadow-gold-500/20 active:scale-95 transition-transform"
-            disabled={submitting || (cart.length === 0 && !selectedPendriveKitAndLot)}
+            disabled={submitting || totalItems === 0}
           >
             {submitting ? <Loader2 size={24} className="animate-spin" /> : <ArrowUpFromLine size={24} />}
             <span className="font-black uppercase tracking-widest">{submitting ? 'PROCESSANDO...' : 'FINALIZAR RETIRADA'}</span>
