@@ -422,38 +422,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.tools, refresh, toast]);
 
-  const returnMovement = useCallback(async (id: string, qty: number, sig: string, obs?: string) => {
-    const mov = state.movements.find(m => m.id === id);
-    if (!mov) return;
-    const status: MovementStatus = qty >= mov.quantity ? 'devolvido' : obs ? 'falta' : 'parcial';
-    const updated: Movement = {
-      ...mov,
-      returnQuantity: qty,
-      returnSignature: sig,
-      returnDate: new Date().toISOString(),
-      observation: obs,
-      status,
-    };
-    await db.updateMovement(updated);
-    // Restore returned quantity
-    await db.updateToolAvailability(mov.toolId, qty);
-    setState(s => ({
-      ...s,
-      movements: s.movements.map(m => m.id === id ? updated : m),
-      tools: s.tools.map(t =>
-        t.id === mov.toolId
-          ? { ...t, availableQuantity: Math.min(t.totalQuantity, t.availableQuantity + qty) }
-          : t
-      ),
-    }));
-  }, [state.movements]);
-
   const returnMovements = useCallback(async (returns: { id: string, qty: number, sig: string, obs?: string }[]) => {
     if (returns.length === 0) return;
 
     const returnDate = new Date().toISOString();
     const updatedMovementsList: Movement[] = [];
     const toolUpdatesMap = new Map<string, number>();
+    const bulkPayload: any[] = [];
 
     try {
       // 1. Prepare updates and calculate new quantities
@@ -478,21 +453,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (toolData) {
           toolUpdatesMap.set(mov.toolId, Math.min(toolData.totalQuantity, currentToolQty + qty));
         }
+
+        bulkPayload.push({
+          id,
+          qty,
+          sig,
+          obs,
+          toolId: mov.toolId,
+          movQty: mov.quantity,
+          toolLotId: mov.toolLotId
+        });
       });
 
-      if (updatedMovementsList.length === 0) return;
+      if (bulkPayload.length === 0) return;
 
-      // 2. Update all movements (Sequential updates)
-      await db.updateMovements(updatedMovementsList);
+      // 2. Use the optimized Bulk endpoint which natively updates the Tool's available_quantity in DB
+      await db.returnMovementsBulk(bulkPayload);
 
-      // 3. Update Tools Availability (Sequential updates)
-      const toolUpdates: { id: string, newQty: number }[] = [];
-      toolUpdatesMap.forEach((newQty, id) => {
-        toolUpdates.push({ id, newQty });
-      });
-      await db.updateToolsAvailabilityOptimized(toolUpdates);
-
-      // 4. Update local state
+      // 3. Update local state
       setState(s => ({
         ...s,
         movements: s.movements.map(m => {
@@ -510,6 +488,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       throw err;
     }
   }, [state.movements, state.tools, refresh, toast]);
+
+  const returnMovement = useCallback(async (id: string, qty: number, sig: string, obs?: string) => {
+    await returnMovements([{ id, qty, sig, obs }]);
+  }, [returnMovements]);
 
   // ─── Inventories ────────────────────────────────────────────────────────────
   const addInventory = useCallback(async (data: Omit<Inventory, 'id' | 'date'>) => {
