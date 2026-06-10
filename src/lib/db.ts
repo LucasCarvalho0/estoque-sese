@@ -71,6 +71,7 @@ export async function updateTool(tool: Tool): Promise<void> {
       availableQuantity: tool.availableQuantity,
       description: tool.description,
       category: tool.category,
+      lots: tool.lots,
     }),
   });
 }
