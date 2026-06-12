@@ -257,18 +257,15 @@ app.patch('/api/movements/:id', async (req, res) => {
     if (status === 'devolvido') {
        const tool = await prisma.tool.findUnique({ where: { id: row.tool_id }});
        if (tool) {
-         let newLots = tool.lots;
+         const dataToUpdate: any = { available_quantity: { increment: returnQuantity ?? row.quantity } };
          if (row.tool_lot_id && Array.isArray(tool.lots)) {
-           newLots = tool.lots.map((lot: any) => 
+           dataToUpdate.lots = tool.lots.map((lot: any) => 
               lot.id === row.tool_lot_id ? { ...lot, status: 'disponivel' } : lot
            );
          }
          await prisma.tool.update({
            where: { id: tool.id },
-           data: {
-             lots: newLots,
-             available_quantity: { increment: returnQuantity ?? row.quantity }
-           }
+           data: dataToUpdate
          });
        }
     }
