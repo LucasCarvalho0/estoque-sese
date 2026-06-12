@@ -291,9 +291,11 @@ app.post('/api/movements/bulk-return', async (req, res) => {
     // Update tool availability and lots
     const toolUpdates = new Map<string, { qty: number, lotsToUpdate: string[] }>();
     returns.forEach(r => {
+      const parsedQty = Number(r.qty) || 0;
+      const movQty = Number(r.movQty) || 0;
       const current = toolUpdates.get(r.toolId) ?? { qty: 0, lotsToUpdate: [] };
-      current.qty += r.qty;
-      if (r.qty >= r.movQty && r.toolLotId) {
+      current.qty += parsedQty;
+      if (parsedQty >= movQty && r.toolLotId) {
         current.lotsToUpdate.push(r.toolLotId);
       }
       toolUpdates.set(r.toolId, current);

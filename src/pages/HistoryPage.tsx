@@ -25,8 +25,9 @@ export default function HistoryPage() {
   const [filterEmployee, setFilterEmployee] = useState('');
   const [filterShift, setFilterShift] = useState(state.currentShift || '');
   const [filterStatus, setFilterStatus] = useState('');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [filterDateFrom, setFilterDateFrom] = useState(todayStr);
+  const [filterDateTo, setFilterDateTo] = useState(todayStr);
   const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
